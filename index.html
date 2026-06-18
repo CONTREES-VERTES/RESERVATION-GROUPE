@@ -331,7 +331,7 @@ h2.section-title{
     <div class="data-table">
       <table>
         <thead>
-          <tr><th>Désignation</th><th>Catégorie</th><th>Prix</th><th>Unité</th><th>Seuil pax</th><th>Notes</th><th></th></tr>
+          <tr><th>Désignation</th><th>Catégorie</th><th>Prix</th><th>Unité</th><th>Seuil pax</th><th>Prestataire par défaut</th><th>Notes</th><th></th></tr>
         </thead>
         <tbody id="catalogue-tbody"></tbody>
       </table>
@@ -1017,7 +1017,7 @@ function wireFicheDossierEvents(){
       qte = (parseInt(document.getElementById("f-nb_adultes").value)||0) + (parseInt(document.getElementById("f-nb_enfants").value)||0);
       if(qte===0) qte = 1;
     }
-    currentDossierDraft.lignes.push({ id:null, designation:tarif.designation, prestataire:"", prix_unitaire:tarif.prix, quantite:qte, total:0 });
+    currentDossierDraft.lignes.push({ id:null, designation:tarif.designation, prestataire:tarif.prestataire_defaut||"", prix_unitaire:tarif.prix, quantite:qte, total:0 });
     e.target.value = "";
     renderLignesTable();
   });
@@ -1313,7 +1313,7 @@ function renderCatalogueTable(){
     .sort((a,b)=>(a.categorie||"").localeCompare(b.categorie||"") || (a.designation||"").localeCompare(b.designation||""));
   const tbody = document.getElementById("catalogue-tbody");
   if(liste.length===0){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Aucune prestation trouvée.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">Aucune prestation trouvée.</td></tr>`;
     return;
   }
   tbody.innerHTML = liste.map(t=>`
@@ -1323,6 +1323,7 @@ function renderCatalogueTable(){
       <td>${euros(t.prix)}</td>
       <td>${t.unite||""}</td>
       <td>${t.seuil||""}</td>
+      <td>${t.prestataire_defaut||"<span style='opacity:0.5;'>Office de Tourisme</span>"}</td>
       <td style="opacity:0.7;font-size:0.8rem;">${t.notes||""}</td>
       <td>
         <button class="btn small ghost t-editer">Modifier</button>
@@ -1344,7 +1345,7 @@ document.getElementById("catalogue-search").addEventListener("input", renderCata
 document.getElementById("btn-nouveau-tarif").addEventListener("click", ()=>openModalTarif(null));
 
 function openModalTarif(id){
-  const t = id ? state.tarifs.find(x=>x.id===id) : {id:null, designation:"", prix:0, categorie:"", unite:"forfait", seuil:"", notes:""};
+  const t = id ? state.tarifs.find(x=>x.id===id) : {id:null, designation:"", prix:0, categorie:"", unite:"forfait", seuil:"", prestataire_defaut:"", notes:""};
   document.getElementById("modal-tarif-title").textContent = id ? "Modifier la prestation" : "Nouvelle prestation";
   document.getElementById("modal-tarif-body").innerHTML = `
     <div class="form-field" style="margin-bottom:12px;"><label>Désignation</label><input type="text" id="t-designation" value="${(t.designation||"").replace(/"/g,"&quot;")}"></div>
@@ -1359,7 +1360,8 @@ function openModalTarif(id){
       </div>
       <div class="form-field"><label>Seuil pax (si palier)</label><input type="text" id="t-seuil" value="${t.seuil||""}"></div>
     </div>
-    <div class="form-field" style="margin:12px 0;"><label>Notes</label><textarea id="t-notes">${t.notes||""}</textarea></div>
+    <div class="form-field" style="margin-bottom:12px;"><label>Prestataire par défaut</label><input type="text" id="t-prestataire_defaut" list="datalist-prestataires" value="${(t.prestataire_defaut||"").replace(/"/g,"&quot;")}" placeholder="Laissez vide si réalisé par l'Office de Tourisme"></div>
+    <div class="form-field" style="margin-bottom:12px;"><label>Notes</label><textarea id="t-notes">${t.notes||""}</textarea></div>
     <div class="toolbar" style="justify-content:flex-end;">
       <button class="btn ghost" id="t-btn-annuler">Annuler</button>
       <button class="btn" id="t-btn-enregistrer">Enregistrer</button>
@@ -1376,6 +1378,7 @@ function openModalTarif(id){
       categorie: document.getElementById("t-categorie").value,
       unite: document.getElementById("t-unite").value,
       seuil: document.getElementById("t-seuil").value,
+      prestataire_defaut: document.getElementById("t-prestataire_defaut").value,
       notes: document.getElementById("t-notes").value
     };
     try{
