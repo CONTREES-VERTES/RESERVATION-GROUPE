@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Réservations Groupes - Contrées Vertes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+/* ===================== TOKENS DE MARQUE CONTREES VERTES ===================== */
+:root{
+  --terracotta:#D88050;
+  --terracotta-dark:#bf6a3c;
+  --bleu-gris:#5D7E8E;
+  --vert-foret:#4B6239;
+  --brun-chaud:#9C755E;
+  --anthracite:#575756;
+  --creme:#FFFBD8;
+  --bleu-pale:#D5ECEF;
+  --vert-pale:#D0E3B9;
+  --rose-poudre:#FBD9DD;
+  --blanc:#FFFFFF;
+  --font-title:'Cooper Black', Georgia, serif;
+  --font-sub:'Oswald','DIN Condensed',sans-serif;
+  --font-body:Helvetica, Arial, sans-serif;
+  --radius:10px;
+  --shadow:0 2px 10px rgba(87,87,86,0.12);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--creme);font-family:var(--font-body);color:var(--anthracite);}
+button{font-family:var(--font-body);cursor:pointer;}
+table{border-collapse:collapse;width:100%;}
+input,select,textarea{font-family:var(--font-body);}
+
+/* ===================== HEADER ===================== */
+#app-header{
+  background:var(--vert-foret);
+  color:var(--creme);
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+}
+#app-header h1{
+  font-family:var(--font-title);
+  font-size:1.5rem;
+  margin:0;
+  letter-spacing:0.5px;
+}
+#app-header .tagline{
+  font-family:var(--font-sub);
+  font-size:0.75rem;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  opacity:0.8;
+  margin-top:2px;
+}
+#sync-status{
+  font-size:0.8rem;
+  font-family:var(--font-sub);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  padding:5px 12px;
+  border-radius:20px;
+  background:rgba(255,255,255,0.15);
+}
+#sync-status.error{background:var(--rose-poudre);color:var(--anthracite);}
+#sync-status.ok{background:var(--vert-pale);color:var(--vert-foret);}
+
+/* ===================== NAV TABS ===================== */
+#tabs{
+  display:flex;
+  background:var(--blanc);
+  border-bottom:3px solid var(--vert-pale);
+  padding:0 24px;
+  gap:4px;
+  overflow-x:auto;
+}
+.tab-btn{
+  background:none;
+  border:none;
+  padding:14px 18px;
+  font-family:var(--font-sub);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  font-size:0.85rem;
+  color:var(--anthracite);
+  border-bottom:3px solid transparent;
+  margin-bottom:-3px;
+  white-space:nowrap;
+}
+.tab-btn:hover{color:var(--terracotta);}
+.tab-btn.active{color:var(--terracotta-dark);border-bottom-color:var(--terracotta);font-weight:600;}
+
+/* ===================== LAYOUT ===================== */
+main{padding:24px;max-width:1300px;margin:0 auto;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+h2.section-title{
+  font-family:var(--font-sub);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  font-size:1.1rem;
+  color:var(--vert-foret);
+  border-left:5px solid var(--terracotta);
+  padding-left:10px;
+  margin:0 0 16px 0;
+}
+
+/* ===================== CARDS / KPI ===================== */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:28px;}
+.kpi-card{
+  background:var(--blanc);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px 18px;
+  border-top:4px solid var(--terracotta);
+}
+.kpi-card .label{font-family:var(--font-sub);text-transform:uppercase;font-size:0.72rem;letter-spacing:1px;color:var(--anthracite);opacity:0.7;}
+.kpi-card .value{font-size:1.7rem;font-weight:700;color:var(--vert-foret);margin-top:4px;}
+.kpi-card.alert{border-top-color:var(--rose-poudre);}
+.kpi-card.alert .value{color:var(--terracotta-dark);}
+
+.chart-card{background:var(--blanc);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:24px;}
+.chart-card canvas{max-height:300px;}
+
+/* ===================== TOOLBAR / FILTERS ===================== */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.toolbar input[type="text"], .toolbar select{
+  padding:8px 12px;border:1px solid var(--bleu-gris);border-radius:6px;font-size:0.9rem;background:var(--blanc);color:var(--anthracite);
+}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 16px;border:none;border-radius:6px;font-size:0.88rem;font-weight:600;
+  background:var(--terracotta);color:var(--blanc);
+}
+.btn:hover{background:var(--terracotta-dark);}
+.btn.secondary{background:var(--bleu-gris);}
+.btn.secondary:hover{background:#4a6776;}
+.btn.ghost{background:transparent;color:var(--bleu-gris);border:1px solid var(--bleu-gris);}
+.btn.ghost:hover{background:var(--bleu-pale);}
+.btn.danger{background:var(--rose-poudre);color:var(--anthracite);}
+.btn.danger:hover{background:#f5b9c2;}
+.btn.small{padding:5px 10px;font-size:0.78rem;}
+
+/* ===================== TABLE ===================== */
+.data-table{background:var(--blanc);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.data-table table{font-size:0.88rem;}
+.data-table th{
+  background:var(--vert-pale);color:var(--vert-foret);text-align:left;padding:10px 12px;
+  font-family:var(--font-sub);text-transform:uppercase;letter-spacing:0.5px;font-size:0.74rem;
+  position:sticky;top:0;
+}
+.data-table td{padding:10px 12px;border-bottom:1px solid #eee;}
+.data-table tr:hover td{background:var(--creme);}
+.data-table tr.clickable{cursor:pointer;}
+.empty-row td{text-align:center;color:var(--anthracite);opacity:0.6;padding:30px;}
+
+.badge{
+  display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;
+  font-family:var(--font-sub);text-transform:uppercase;letter-spacing:0.5px;
+}
+.badge-devis{background:var(--bleu-pale);color:var(--bleu-gris);}
+.badge-confirme{background:#cfe3ff;color:#345b8c;}
+.badge-signe{background:var(--vert-pale);color:var(--vert-foret);}
+.badge-acompte_recu{background:#ffe5c2;color:var(--terracotta-dark);}
+.badge-realise{background:var(--vert-foret);color:var(--creme);}
+.badge-solde{background:#2f4a23;color:var(--creme);}
+.badge-annule{background:var(--rose-poudre);color:var(--anthracite);}
+
+/* ===================== MODAL FICHE DOSSIER ===================== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(87,87,86,0.55);z-index:100;
+  display:none;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto;
+}
+.modal-overlay.open{display:flex;}
+.modal-box{
+  background:var(--creme);border-radius:var(--radius);max-width:980px;width:100%;
+  box-shadow:0 10px 40px rgba(0,0,0,0.3);margin-bottom:40px;
+}
+.modal-header{
+  background:var(--vert-foret);color:var(--creme);padding:16px 24px;border-radius:var(--radius) var(--radius) 0 0;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+}
+.modal-header h3{margin:0;font-family:var(--font-title);font-size:1.2rem;}
+.modal-body{padding:24px;}
+.modal-close{background:none;border:none;color:var(--creme);font-size:1.4rem;}
+
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px;}
+.form-field label{display:block;font-family:var(--font-sub);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--anthracite);opacity:0.75;margin-bottom:4px;}
+.form-field input, .form-field select, .form-field textarea{
+  width:100%;padding:8px 10px;border:1px solid #c9c4ac;border-radius:6px;background:var(--blanc);font-size:0.9rem;color:var(--anthracite);
+}
+.form-field textarea{resize:vertical;min-height:50px;}
+
+.subsection{background:var(--blanc);border-radius:var(--radius);padding:18px;margin-bottom:18px;box-shadow:var(--shadow);}
+.subsection h4{font-family:var(--font-sub);text-transform:uppercase;font-size:0.85rem;letter-spacing:1px;color:var(--vert-foret);margin:0 0 12px 0;}
+
+.lignes-table th, .lignes-table td{padding:6px 8px;font-size:0.85rem;}
+.lignes-table input{width:100%;padding:5px 7px;border:1px solid #ddd;border-radius:4px;font-size:0.85rem;}
+.lignes-table input.num{text-align:right;}
+.totaux-box{display:flex;justify-content:flex-end;}
+.totaux-table{width:320px;font-size:0.9rem;}
+.totaux-table td{padding:5px 4px;}
+.totaux-table td.label{color:var(--anthracite);opacity:0.75;}
+.totaux-table td.value{text-align:right;font-weight:600;}
+.totaux-table tr.total td{font-size:1.1rem;color:var(--vert-foret);border-top:2px solid var(--vert-pale);padding-top:8px;}
+
+.doc-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+
+/* ===================== PRINT ===================== */
+#print-area{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  #print-area, #print-area *{visibility:visible;}
+  #print-area{display:block;position:absolute;top:0;left:0;width:100%;}
+}
+.doc-page{font-family:var(--font-body);color:#222;padding:20px;max-width:760px;margin:0 auto;}
+.doc-logo{font-family:var(--font-title);font-size:1.6rem;color:var(--vert-foret);}
+.doc-title{font-family:var(--font-sub);text-transform:uppercase;letter-spacing:2px;font-size:1.3rem;text-align:center;margin:18px 0;color:var(--anthracite);}
+.doc-meta-table{width:100%;font-size:0.85rem;margin-bottom:16px;}
+.doc-meta-table td{padding:4px 8px;border:1px solid #ddd;}
+.doc-meta-table td.k{background:#f4f4f4;font-weight:600;width:35%;}
+.doc-lines-table{width:100%;font-size:0.85rem;margin-bottom:16px;}
+.doc-lines-table th{background:var(--vert-pale);padding:6px 8px;text-align:left;}
+.doc-lines-table td{padding:6px 8px;border-bottom:1px solid #eee;}
+.doc-foot{font-size:0.72rem;color:#777;text-align:center;margin-top:30px;border-top:1px solid #ddd;padding-top:10px;}
+
+/* ===================== TOAST ===================== */
+#toast{
+  position:fixed;bottom:20px;right:20px;background:var(--vert-foret);color:var(--creme);
+  padding:12px 20px;border-radius:8px;box-shadow:var(--shadow);font-size:0.9rem;z-index:300;
+  opacity:0;transform:translateY(10px);transition:all 0.25s;
+}
+#toast.show{opacity:1;transform:translateY(0);}
+#toast.error{background:#a1394a;}
+
+@media (max-width:600px){
+  main{padding:14px;}
+  .modal-box{margin:0;border-radius:0;}
+  #app-header h1{font-size:1.2rem;}
+}
+</style>
+</head>
+<body>
+
+<header id="app-header">
+  <div>
+    <h1>Contrées Vertes - Groupes</h1>
+    <div class="tagline">L'art de l'imprévu - gestion des réservations</div>
+  </div>
+  <div id="sync-status">Chargement...</div>
+</header>
+
+<nav id="tabs">
+  <button class="tab-btn active" data-tab="dashboard">Tableau de bord</button>
+  <button class="tab-btn" data-tab="dossiers">Dossiers</button>
+  <button class="tab-btn" data-tab="catalogue">Catalogue tarifaire</button>
+  <button class="tab-btn" data-tab="clients">Clients</button>
+</nav>
+
+<main>
+
+  <!-- ===================== TABLEAU DE BORD ===================== -->
+  <section class="tab-content active" id="tab-dashboard">
+    <h2 class="section-title">Vue d'ensemble</h2>
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="chart-card">
+      <h4 style="font-family:var(--font-sub);text-transform:uppercase;letter-spacing:1px;color:var(--vert-foret);margin-top:0;">Chiffre d'affaires par mois (date de visite)</h4>
+      <canvas id="chart-ca"></canvas>
+    </div>
+    <div class="chart-card">
+      <h4 style="font-family:var(--font-sub);text-transform:uppercase;letter-spacing:1px;color:var(--vert-foret);margin-top:0;">Dossiers par statut</h4>
+      <canvas id="chart-statuts"></canvas>
+    </div>
+  </section>
+
+  <!-- ===================== DOSSIERS ===================== -->
+  <section class="tab-content" id="tab-dossiers">
+    <h2 class="section-title">Dossiers groupe</h2>
+    <div class="toolbar">
+      <input type="text" id="dossiers-search" placeholder="Rechercher client, lieu, organisme...">
+      <select id="dossiers-filter-statut">
+        <option value="">Tous les statuts</option>
+        <option value="devis">Devis envoyé</option>
+        <option value="confirme">Confirmé</option>
+        <option value="signe">Signé</option>
+        <option value="acompte_recu">Acompte reçu</option>
+        <option value="realise">Réalisé</option>
+        <option value="solde">Soldé</option>
+        <option value="annule">Annulé</option>
+      </select>
+      <button class="btn" id="btn-nouveau-dossier">+ Nouveau dossier</button>
+      <button class="btn ghost" id="btn-refresh-dossiers">Actualiser</button>
+    </div>
+    <div class="data-table">
+      <table>
+        <thead>
+          <tr>
+            <th>N° devis</th><th>Client / Organisme</th><th>Lieu</th><th>Date visite</th>
+            <th>Statut</th><th>Pax</th><th>Total TTC</th><th>Reste à payer</th><th>Marge</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="dossiers-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== CATALOGUE ===================== -->
+  <section class="tab-content" id="tab-catalogue">
+    <h2 class="section-title">Catalogue tarifaire</h2>
+    <div class="toolbar">
+      <input type="text" id="catalogue-search" placeholder="Rechercher une prestation...">
+      <button class="btn" id="btn-nouveau-tarif">+ Nouvelle prestation</button>
+    </div>
+    <div class="data-table">
+      <table>
+        <thead>
+          <tr><th>Désignation</th><th>Catégorie</th><th>Prix</th><th>Unité</th><th>Seuil pax</th><th>Notes</th><th></th></tr>
+        </thead>
+        <tbody id="catalogue-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== CLIENTS ===================== -->
+  <section class="tab-content" id="tab-clients">
+    <h2 class="section-title">Base clients</h2>
+    <div class="toolbar">
+      <input type="text" id="clients-search" placeholder="Rechercher un client...">
+      <button class="btn" id="btn-nouveau-client">+ Nouveau client</button>
+    </div>
+    <div class="data-table">
+      <table>
+        <thead>
+          <tr><th>Nom / Organisme</th><th>Contact</th><th>Tél / Email</th><th>Type</th><th>Nb dossiers</th><th>CA cumulé</th><th></th></tr>
+        </thead>
+        <tbody id="clients-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== MODAL FICHE DOSSIER ===================== -->
+<div class="modal-overlay" id="modal-dossier">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-dossier-title">Nouveau dossier</h3>
+      <button class="modal-close" id="modal-dossier-close">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-dossier-body"></div>
+  </div>
+</div>
+
+<!-- ===================== MODAL TARIF ===================== -->
+<div class="modal-overlay" id="modal-tarif">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 id="modal-tarif-title">Nouvelle prestation</h3>
+      <button class="modal-close" id="modal-tarif-close">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-tarif-body"></div>
+  </div>
+</div>
+
+<!-- ===================== MODAL CLIENT ===================== -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 id="modal-client-title">Nouveau client</h3>
+      <button class="modal-close" id="modal-client-close">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-client-body"></div>
+  </div>
+</div>
+
+<div id="print-area"></div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIGURATION - A COMPLETER APRES DEPLOIEMENT APPS SCRIPT
+   ============================================================ */
+const CONFIG = {
+  API_URL: "https://script.google.com/macros/s/AKfycbyW97d1B4fx5n2IWKoTbtLR2FiuhBQMcgSld-U-WObwsEd1R0WBAslGr1OREq2zkpY/exec"
+};
+
+/* ============================================================
+   ETAT GLOBAL
+   ============================================================ */
+let state = { dossiers:[], lignes:[], fraisPrestataires:[], tarifs:[], clients:[] };
+let chartCA = null, chartStatuts = null;
+let currentDossierDraft = null; // {dossier, lignes, frais} en cours d'edition dans la modale
+
+const STATUTS = [
+  {key:"devis", label:"Devis envoyé"},
+  {key:"confirme", label:"Confirmé"},
+  {key:"signe", label:"Signé"},
+  {key:"acompte_recu", label:"Acompte reçu"},
+  {key:"realise", label:"Réalisé"},
+  {key:"solde", label:"Soldé"},
+  {key:"annule", label:"Annulé"}
+];
+const MODES_PAIEMENT = ["", "Chèque", "Virement", "CB", "Espèces"];
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function euros(n){
+  const v = parseFloat(n) || 0;
+  return v.toLocaleString("fr-FR", {minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
+}
+function dateFR(iso){
+  if(!iso) return "";
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("fr-FR");
+}
+function uid(){
+  return "tmp_" + Math.random().toString(36).slice(2,10);
+}
+function statutLabel(key){
+  const s = STATUTS.find(s=>s.key===key);
+  return s ? s.label : key;
+}
+function showToast(msg, isError){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "show" + (isError ? " error" : "");
+  setTimeout(()=>{ t.className = ""; }, 3200);
+}
+
+/* ============================================================
+   APPELS API
+   ============================================================ */
+async function apiGetAll(){
+  const res = await fetch(CONFIG.API_URL + "?action=getAll");
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return data;
+}
+async function apiPost(payload){
+  const res = await fetch(CONFIG.API_URL, {
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return data;
+}
+
+async function loadAll(){
+  try{
+    setSyncStatus("Synchronisation...", false);
+    state = await apiGetAll();
+    setSyncStatus("A jour", true);
+    renderAll();
+  }catch(err){
+    setSyncStatus("Erreur de connexion", false, true);
+    showToast("Impossible de charger les données : " + err.message, true);
+  }
+}
+function setSyncStatus(text, ok, error){
+  const el = document.getElementById("sync-status");
+  el.textContent = text;
+  el.className = error ? "error" : (ok ? "ok" : "");
+}
+
+function renderAll(){
+  renderDashboard();
+  renderDossiersTable();
+  renderCatalogueTable();
+  renderClientsTable();
+}
+
+/* ============================================================
+   NAVIGATION ONGLETS
+   ============================================================ */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+/* ============================================================
+   TABLEAU DE BORD
+   ============================================================ */
+function renderDashboard(){
+  const dossiersActifs = state.dossiers.filter(d=>d.statut !== "annule");
+  const caTotal = dossiersActifs.reduce((s,d)=>s + (parseFloat(d.total_ttc)||0), 0);
+  const margeTotale = dossiersActifs.reduce((s,d)=>s + margeDossier(d.id), 0);
+  const resteAPayerTotal = dossiersActifs.reduce((s,d)=>s + resteAPayer(d), 0);
+  const nbRealises = dossiersActifs.filter(d=>d.statut==="realise" || d.statut==="solde").length;
+  const moisActuel = new Date().toISOString().slice(0,7);
+  const prochains = dossiersActifs.filter(d=>d.date_visite && d.date_visite >= new Date().toISOString().slice(0,10)).length;
+
+  document.getElementById("kpi-grid").innerHTML = `
+    <div class="kpi-card"><div class="label">CA total (actif)</div><div class="value">${euros(caTotal)}</div></div>
+    <div class="kpi-card"><div class="label">Marge totale</div><div class="value">${euros(margeTotale)}</div></div>
+    <div class="kpi-card ${resteAPayerTotal>0 ? "alert" : ""}"><div class="label">Reste à payer (tous dossiers)</div><div class="value">${euros(resteAPayerTotal)}</div></div>
+    <div class="kpi-card"><div class="label">Dossiers réalisés</div><div class="value">${nbRealises}</div></div>
+    <div class="kpi-card"><div class="label">Voyages à venir</div><div class="value">${prochains}</div></div>
+  `;
+
+  // Graphique CA par mois (sur date de visite)
+  const parMois = {};
+  dossiersActifs.forEach(d=>{
+    if(!d.date_visite) return;
+    const m = String(d.date_visite).slice(0,7);
+    parMois[m] = (parMois[m]||0) + (parseFloat(d.total_ttc)||0);
+  });
+  const moisTries = Object.keys(parMois).sort();
+  const ctxCA = document.getElementById("chart-ca").getContext("2d");
+  if(chartCA) chartCA.destroy();
+  chartCA = new Chart(ctxCA, {
+    type:"bar",
+    data:{
+      labels: moisTries,
+      datasets:[{ label:"CA TTC", data: moisTries.map(m=>parMois[m]), backgroundColor:"#D88050" }]
+    },
+    options:{ responsive:true, plugins:{legend:{display:false}} }
+  });
+
+  // Graphique repartition par statut
+  const parStatut = {};
+  STATUTS.forEach(s=> parStatut[s.label] = 0);
+  state.dossiers.forEach(d=>{ parStatut[statutLabel(d.statut)] = (parStatut[statutLabel(d.statut)]||0) + 1; });
+  const ctxS = document.getElementById("chart-statuts").getContext("2d");
+  if(chartStatuts) chartStatuts.destroy();
+  chartStatuts = new Chart(ctxS, {
+    type:"doughnut",
+    data:{
+      labels: Object.keys(parStatut),
+      datasets:[{ data: Object.values(parStatut), backgroundColor:["#5D7E8E","#cfe3ff","#D0E3B9","#ffe5c2","#4B6239","#2f4a23","#FBD9DD"] }]
+    },
+    options:{ responsive:true }
+  });
+}
+
+function lignesDuDossier(dossierId){
+  return state.lignes.filter(l=>l.dossier_id===dossierId).sort((a,b)=>(a.ordre||0)-(b.ordre||0));
+}
+function fraisDuDossier(dossierId){
+  return state.fraisPrestataires.filter(f=>f.dossier_id===dossierId);
+}
+function margeDossier(dossierId){
+  const dossier = state.dossiers.find(d=>d.id===dossierId);
+  if(!dossier) return 0;
+  const totalFrais = fraisDuDossier(dossierId).reduce((s,f)=>s+(parseFloat(f.montant)||0),0);
+  return (parseFloat(dossier.total_ttc)||0) - totalFrais;
+}
+function resteAPayer(dossier){
+  const ttc = parseFloat(dossier.total_ttc)||0;
+  const acompte = parseFloat(dossier.acompte_paye)||0;
+  const solde = parseFloat(dossier.solde_paye)||0;
+  return ttc - acompte - solde;
+}
+
+/* ============================================================
+   LISTE DES DOSSIERS
+   ============================================================ */
+function renderDossiersTable(){
+  const search = (document.getElementById("dossiers-search").value || "").toLowerCase();
+  const filtreStatut = document.getElementById("dossiers-filter-statut").value;
+
+  let liste = state.dossiers.filter(d=>{
+    if(filtreStatut && d.statut !== filtreStatut) return false;
+    if(!search) return true;
+    const blob = [d.client_nom, d.organisme, d.lieu_visite, d.numero_devis].join(" ").toLowerCase();
+    return blob.includes(search);
+  }).sort((a,b)=> (b.date_visite||"").localeCompare(a.date_visite||""));
+
+  const tbody = document.getElementById("dossiers-tbody");
+  if(liste.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="10">Aucun dossier ne correspond à votre recherche.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = liste.map(d=>{
+    const nbPax = (parseInt(d.nb_adultes)||0) + (parseInt(d.nb_enfants)||0);
+    return `
+    <tr class="clickable" data-id="${d.id}">
+      <td>${d.numero_devis||""}</td>
+      <td>${d.client_nom||""}${d.organisme ? " <span style='opacity:0.6'>("+d.organisme+")</span>" : ""}</td>
+      <td>${d.lieu_visite||""}</td>
+      <td>${dateFR(d.date_visite)}</td>
+      <td><span class="badge badge-${d.statut}">${statutLabel(d.statut)}</span></td>
+      <td>${nbPax}</td>
+      <td>${euros(d.total_ttc)}</td>
+      <td>${euros(resteAPayer(d))}</td>
+      <td>${euros(margeDossier(d.id))}</td>
+      <td><button class="btn small ghost btn-dupliquer" data-id="${d.id}">Dupliquer</button></td>
+    </tr>`;
+  }).join("");
+
+  tbody.querySelectorAll("tr.clickable").forEach(tr=>{
+    tr.addEventListener("click", (e)=>{
+      if(e.target.classList.contains("btn-dupliquer")) return;
+      openFicheDossier(tr.dataset.id);
+    });
+  });
+  tbody.querySelectorAll(".btn-dupliquer").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      dupliquerDossier(btn.dataset.id);
+    });
+  });
+}
+document.getElementById("dossiers-search").addEventListener("input", renderDossiersTable);
+document.getElementById("dossiers-filter-statut").addEventListener("change", renderDossiersTable);
+document.getElementById("btn-refresh-dossiers").addEventListener("click", loadAll);
+document.getElementById("btn-nouveau-dossier").addEventListener("click", ()=>openFicheDossier(null));
+
+function dupliquerDossier(id){
+  const original = state.dossiers.find(d=>d.id===id);
+  if(!original) return;
+  const lignes = lignesDuDossier(id).map(l=>({...l, id:undefined}));
+  const frais = fraisDuDossier(id).map(f=>({...f, id:undefined}));
+  const copie = {...original, id:undefined, numero_devis:undefined, statut:"devis",
+    acompte_paye:0, acompte_date:"", solde_paye:0, solde_date:""};
+  currentDossierDraft = { dossier: copie, lignes, frais };
+  openFicheDossierModal();
+}
+
+/* ============================================================
+   FICHE DOSSIER (CREATION / EDITION)
+   ============================================================ */
+function nouveauDossierVide(){
+  return {
+    id:null, numero_devis:"", statut:"devis", client_nom:"", organisme:"",
+    contact_nom:"", contact_tel:"", contact_email:"", adresse:"",
+    lieu_visite:"", date_visite:"", nb_adultes:0, nb_enfants:0, nb_accompagnateurs:0, nb_gratuites:0,
+    sous_total:0, remise:0, frais_dossier_montant:0, total_ttc:0,
+    acompte_attendu:0, acompte_paye:0, acompte_date:"", acompte_mode:"",
+    solde_attendu:0, solde_paye:0, solde_date:"", solde_mode:"", notes:""
+  };
+}
+
+function openFicheDossier(id){
+  if(id){
+    const dossier = state.dossiers.find(d=>d.id===id);
+    const lignes = lignesDuDossier(id).map(l=>({...l}));
+    const frais = fraisDuDossier(id).map(f=>({...f}));
+    currentDossierDraft = { dossier: {...dossier}, lignes, frais };
+  } else {
+    currentDossierDraft = { dossier: nouveauDossierVide(), lignes:[], frais:[] };
+  }
+  openFicheDossierModal();
+}
+
+function openFicheDossierModal(){
+  const d = currentDossierDraft.dossier;
+  document.getElementById("modal-dossier-title").textContent = d.id ? ("Dossier " + (d.numero_devis||"")) : "Nouveau dossier";
+  document.getElementById("modal-dossier-body").innerHTML = ficheDossierHTML();
+  wireFicheDossierEvents();
+  document.getElementById("modal-dossier").classList.add("open");
+}
+document.getElementById("modal-dossier-close").addEventListener("click", ()=>{
+  document.getElementById("modal-dossier").classList.remove("open");
+});
+
+function ficheDossierHTML(){
+  const d = currentDossierDraft.dossier;
+  const statutOptions = STATUTS.map(s=>`<option value="${s.key}" ${d.statut===s.key?"selected":""}>${s.label}</option>`).join("");
+  return `
+    <div class="form-grid">
+      <div class="form-field"><label>Statut du dossier</label>
+        <select id="f-statut">${statutOptions}</select>
+      </div>
+      <div class="form-field"><label>N° de devis</label>
+        <input type="text" id="f-numero" value="${d.numero_devis||""}" placeholder="généré automatiquement">
+      </div>
+      <div class="form-field"><label>Lieu de la visite</label>
+        <input type="text" id="f-lieu" value="${d.lieu_visite||""}" placeholder="Tulle, Gimel, Corrèze...">
+      </div>
+      <div class="form-field"><label>Date de la visite</label>
+        <input type="date" id="f-date" value="${d.date_visite||""}">
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h4>Client</h4>
+      <div class="form-grid">
+        <div class="form-field"><label>Nom du client / responsable</label><input type="text" id="f-client_nom" value="${d.client_nom||""}"></div>
+        <div class="form-field"><label>Organisme</label><input type="text" id="f-organisme" value="${d.organisme||""}"></div>
+        <div class="form-field"><label>Contact - nom</label><input type="text" id="f-contact_nom" value="${d.contact_nom||""}"></div>
+        <div class="form-field"><label>Contact - téléphone</label><input type="text" id="f-contact_tel" value="${d.contact_tel||""}"></div>
+        <div class="form-field"><label>Contact - email</label><input type="text" id="f-contact_email" value="${d.contact_email||""}"></div>
+        <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" value="${d.adresse||""}"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field"><label>Nb adultes</label><input type="number" min="0" id="f-nb_adultes" value="${d.nb_adultes||0}"></div>
+        <div class="form-field"><label>Nb enfants</label><input type="number" min="0" id="f-nb_enfants" value="${d.nb_enfants||0}"></div>
+        <div class="form-field"><label>Nb accompagnateurs</label><input type="number" min="0" id="f-nb_accompagnateurs" value="${d.nb_accompagnateurs||0}"></div>
+        <div class="form-field"><label>Nb gratuités</label><input type="number" min="0" id="f-nb_gratuites" value="${d.nb_gratuites||0}"></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h4>Prestations</h4>
+      <div class="toolbar" style="margin-bottom:10px;">
+        <select id="f-catalogue-select" style="flex:1;min-width:240px;">
+          <option value="">+ Ajouter une prestation depuis le catalogue...</option>
+          ${state.tarifs.map(t=>`<option value="${t.id}">${t.designation} (${euros(t.prix)})</option>`).join("")}
+        </select>
+        <button class="btn small" id="f-btn-ajouter-ligne-libre">+ Ligne libre</button>
+      </div>
+      <table class="lignes-table">
+        <thead><tr><th style="width:45%">Désignation</th><th>Prix unit.</th><th>Quantité</th><th>Total</th><th></th></tr></thead>
+        <tbody id="f-lignes-tbody"></tbody>
+      </table>
+      <div class="totaux-box">
+        <table class="totaux-table">
+          <tr><td class="label">Sous-total</td><td class="value" id="f-display-soustotal">0,00 €</td></tr>
+          <tr><td class="label">Remise (€)</td><td class="value"><input type="number" step="0.01" id="f-remise" value="${d.remise||0}" style="width:90px;text-align:right;"></td></tr>
+          <tr><td class="label">Frais de dossier (€)</td><td class="value"><input type="number" step="0.01" id="f-frais_dossier" value="${d.frais_dossier_montant||0}" style="width:90px;text-align:right;"></td></tr>
+          <tr><td class="label">TVA</td><td class="value">Non applicable (art. 293B CGI)</td></tr>
+          <tr class="total"><td class="label">TOTAL TTC</td><td class="value" id="f-display-total">0,00 €</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h4>Paiements client</h4>
+      <div class="form-grid">
+        <div class="form-field"><label>Acompte attendu (30% suggéré)</label><input type="number" step="0.01" id="f-acompte_attendu" value="${d.acompte_attendu||0}"></div>
+        <div class="form-field"><label>Acompte payé</label><input type="number" step="0.01" id="f-acompte_paye" value="${d.acompte_paye||0}"></div>
+        <div class="form-field"><label>Date acompte</label><input type="date" id="f-acompte_date" value="${d.acompte_date||""}"></div>
+        <div class="form-field"><label>Mode acompte</label>
+          <select id="f-acompte_mode">${MODES_PAIEMENT.map(m=>`<option value="${m}" ${d.acompte_mode===m?"selected":""}>${m||"-"}</option>`).join("")}</select>
+        </div>
+        <div class="form-field"><label>Solde attendu</label><input type="number" step="0.01" id="f-solde_attendu" value="${d.solde_attendu||0}"></div>
+        <div class="form-field"><label>Solde payé</label><input type="number" step="0.01" id="f-solde_paye" value="${d.solde_paye||0}"></div>
+        <div class="form-field"><label>Date solde</label><input type="date" id="f-solde_date" value="${d.solde_date||""}"></div>
+        <div class="form-field"><label>Mode solde</label>
+          <select id="f-solde_mode">${MODES_PAIEMENT.map(m=>`<option value="${m}" ${d.solde_mode===m?"selected":""}>${m||"-"}</option>`).join("")}</select>
+        </div>
+      </div>
+      <div style="text-align:right;font-weight:600;color:var(--terracotta-dark);" id="f-display-reste"></div>
+    </div>
+
+    <div class="subsection">
+      <h4>Frais prestataires (reversement)</h4>
+      <button class="btn small secondary" id="f-btn-ajouter-frais" style="margin-bottom:10px;">+ Ajouter un frais prestataire</button>
+      <table class="lignes-table">
+        <thead><tr><th>Catégorie</th><th>Prestataire</th><th>Montant</th><th>Payé</th><th>Date paiement</th><th></th></tr></thead>
+        <tbody id="f-frais-tbody"></tbody>
+      </table>
+      <div style="text-align:right;font-weight:600;color:var(--vert-foret);" id="f-display-marge"></div>
+    </div>
+
+    <div class="subsection">
+      <h4>Notes</h4>
+      <textarea id="f-notes" style="width:100%;">${d.notes||""}</textarea>
+    </div>
+
+    <div class="subsection">
+      <h4>Documents</h4>
+      <div class="doc-buttons">
+        <button class="btn ghost" id="f-btn-devis">Aperçu Devis</button>
+        <button class="btn ghost" id="f-btn-bon-echange">Aperçu Bon d'échange</button>
+        <button class="btn ghost" id="f-btn-contrat">Aperçu Contrat</button>
+      </div>
+    </div>
+
+    <div class="toolbar" style="justify-content:space-between;margin-top:20px;">
+      <div>
+        ${d.id ? `<button class="btn danger" id="f-btn-supprimer">Supprimer le dossier</button>` : ""}
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn ghost" id="f-btn-annuler">Annuler</button>
+        <button class="btn" id="f-btn-enregistrer">Enregistrer</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderLignesTable(){
+  const tbody = document.getElementById("f-lignes-tbody");
+  const lignes = currentDossierDraft.lignes;
+  if(lignes.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Aucune prestation ajoutée.</td></tr>`;
+  } else {
+    tbody.innerHTML = lignes.map((l, i)=>`
+      <tr data-idx="${i}">
+        <td><input type="text" class="l-designation" value="${(l.designation||"").replace(/"/g,"&quot;")}"></td>
+        <td><input type="number" step="0.01" class="num l-prix" value="${l.prix_unitaire||0}"></td>
+        <td><input type="number" step="1" class="num l-qte" value="${l.quantite||1}"></td>
+        <td style="text-align:right;font-weight:600;">${euros(l.total)}</td>
+        <td><button class="btn small danger l-supprimer">×</button></td>
+      </tr>
+    `).join("");
+  }
+  recalculerTotaux();
+}
+
+function recalculerTotaux(){
+  const lignes = currentDossierDraft.lignes;
+  lignes.forEach(l=>{ l.total = (parseFloat(l.prix_unitaire)||0) * (parseFloat(l.quantite)||0); });
+  const sousTotal = lignes.reduce((s,l)=>s+l.total,0);
+  const remise = parseFloat(document.getElementById("f-remise")?.value)||0;
+  const fraisDossier = parseFloat(document.getElementById("f-frais_dossier")?.value)||0;
+  const totalTTC = sousTotal - remise + fraisDossier;
+
+  document.getElementById("f-display-soustotal").textContent = euros(sousTotal);
+  document.getElementById("f-display-total").textContent = euros(totalTTC);
+
+  const acompteAttenduField = document.getElementById("f-acompte_attendu");
+  if(acompteAttenduField && !currentDossierDraft.dossier.id && parseFloat(acompteAttenduField.value)===0){
+    acompteAttenduField.value = (totalTTC * 0.3).toFixed(2);
+  }
+
+  const acomptePaye = parseFloat(document.getElementById("f-acompte_paye")?.value)||0;
+  const soldePaye = parseFloat(document.getElementById("f-solde_paye")?.value)||0;
+  const reste = totalTTC - acomptePaye - soldePaye;
+  document.getElementById("f-display-reste").textContent = "Reste à payer : " + euros(reste);
+
+  const totalFrais = currentDossierDraft.frais.reduce((s,f)=>s+(parseFloat(f.montant)||0),0);
+  document.getElementById("f-display-marge").textContent = "Marge estimée : " + euros(totalTTC - totalFrais);
+
+  currentDossierDraft._sousTotal = sousTotal;
+  currentDossierDraft._totalTTC = totalTTC;
+}
+
+function renderFraisTable(){
+  const tbody = document.getElementById("f-frais-tbody");
+  const frais = currentDossierDraft.frais;
+  if(frais.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Aucun frais prestataire ajouté.</td></tr>`;
+  } else {
+    tbody.innerHTML = frais.map((f,i)=>`
+      <tr data-idx="${i}">
+        <td><input type="text" class="fr-categorie" value="${(f.categorie||"").replace(/"/g,"&quot;")}" placeholder="Hébergement, Transport..."></td>
+        <td><input type="text" class="fr-prestataire" value="${(f.prestataire||"").replace(/"/g,"&quot;")}"></td>
+        <td><input type="number" step="0.01" class="num fr-montant" value="${f.montant||0}"></td>
+        <td style="text-align:center;"><input type="checkbox" class="fr-paye" ${f.paye ? "checked" : ""}></td>
+        <td><input type="date" class="fr-date" value="${f.date_paiement||""}"></td>
+        <td><button class="btn small danger fr-supprimer">×</button></td>
+      </tr>
+    `).join("");
+  }
+  recalculerTotaux();
+}
+
+function wireFicheDossierEvents(){
+  renderLignesTable();
+  renderFraisTable();
+
+  document.getElementById("f-catalogue-select").addEventListener("change", (e)=>{
+    const tarif = state.tarifs.find(t=>t.id===e.target.value);
+    if(!tarif) return;
+    let qte = 1;
+    if(tarif.unite === "personne"){
+      qte = (parseInt(document.getElementById("f-nb_adultes").value)||0) + (parseInt(document.getElementById("f-nb_enfants").value)||0);
+      if(qte===0) qte = 1;
+    }
+    currentDossierDraft.lignes.push({ id:null, designation:tarif.designation, prix_unitaire:tarif.prix, quantite:qte, total:0 });
+    e.target.value = "";
+    renderLignesTable();
+  });
+  document.getElementById("f-btn-ajouter-ligne-libre").addEventListener("click", ()=>{
+    currentDossierDraft.lignes.push({ id:null, designation:"", prix_unitaire:0, quantite:1, total:0 });
+    renderLignesTable();
+  });
+  document.getElementById("f-lignes-tbody").addEventListener("input", (e)=>{
+    const tr = e.target.closest("tr");
+    if(!tr) return;
+    const idx = parseInt(tr.dataset.idx);
+    if(e.target.classList.contains("l-designation")) currentDossierDraft.lignes[idx].designation = e.target.value;
+    if(e.target.classList.contains("l-prix")) currentDossierDraft.lignes[idx].prix_unitaire = parseFloat(e.target.value)||0;
+    if(e.target.classList.contains("l-qte")) currentDossierDraft.lignes[idx].quantite = parseFloat(e.target.value)||0;
+    recalculerTotaux();
+    const totalCell = tr.children[3];
+    totalCell.textContent = euros(currentDossierDraft.lignes[idx].prix_unitaire * currentDossierDraft.lignes[idx].quantite);
+  });
+  document.getElementById("f-lignes-tbody").addEventListener("click", (e)=>{
+    if(e.target.classList.contains("l-supprimer")){
+      const idx = parseInt(e.target.closest("tr").dataset.idx);
+      currentDossierDraft.lignes.splice(idx,1);
+      renderLignesTable();
+    }
+  });
+
+  document.getElementById("f-btn-ajouter-frais").addEventListener("click", ()=>{
+    currentDossierDraft.frais.push({ id:null, categorie:"", prestataire:"", montant:0, paye:false, date_paiement:"" });
+    renderFraisTable();
+  });
+  document.getElementById("f-frais-tbody").addEventListener("input", (e)=>{
+    const tr = e.target.closest("tr");
+    if(!tr) return;
+    const idx = parseInt(tr.dataset.idx);
+    const f = currentDossierDraft.frais[idx];
+    if(e.target.classList.contains("fr-categorie")) f.categorie = e.target.value;
+    if(e.target.classList.contains("fr-prestataire")) f.prestataire = e.target.value;
+    if(e.target.classList.contains("fr-montant")) f.montant = parseFloat(e.target.value)||0;
+    if(e.target.classList.contains("fr-paye")) f.paye = e.target.checked;
+    if(e.target.classList.contains("fr-date")) f.date_paiement = e.target.value;
+    recalculerTotaux();
+  });
+  document.getElementById("f-frais-tbody").addEventListener("click", (e)=>{
+    if(e.target.classList.contains("fr-supprimer")){
+      const idx = parseInt(e.target.closest("tr").dataset.idx);
+      currentDossierDraft.frais.splice(idx,1);
+      renderFraisTable();
+    }
+  });
+
+  ["f-remise","f-frais_dossier","f-acompte_paye","f-solde_paye","f-nb_adultes","f-nb_enfants"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", recalculerTotaux);
+  });
+
+  document.getElementById("f-btn-annuler").addEventListener("click", ()=>{
+    document.getElementById("modal-dossier").classList.remove("open");
+  });
+  document.getElementById("f-btn-enregistrer").addEventListener("click", enregistrerDossier);
+  const btnSupprimer = document.getElementById("f-btn-supprimer");
+  if(btnSupprimer) btnSupprimer.addEventListener("click", supprimerDossierCourant);
+
+  document.getElementById("f-btn-devis").addEventListener("click", ()=>imprimerDocument("devis"));
+  document.getElementById("f-btn-bon-echange").addEventListener("click", ()=>imprimerDocument("bon_echange"));
+  document.getElementById("f-btn-contrat").addEventListener("click", ()=>imprimerDocument("contrat"));
+}
+
+function lireFormulaireDossier(){
+  const d = currentDossierDraft.dossier;
+  d.statut = document.getElementById("f-statut").value;
+  d.numero_devis = document.getElementById("f-numero").value;
+  d.lieu_visite = document.getElementById("f-lieu").value;
+  d.date_visite = document.getElementById("f-date").value;
+  d.client_nom = document.getElementById("f-client_nom").value;
+  d.organisme = document.getElementById("f-organisme").value;
+  d.contact_nom = document.getElementById("f-contact_nom").value;
+  d.contact_tel = document.getElementById("f-contact_tel").value;
+  d.contact_email = document.getElementById("f-contact_email").value;
+  d.adresse = document.getElementById("f-adresse").value;
+  d.nb_adultes = parseInt(document.getElementById("f-nb_adultes").value)||0;
+  d.nb_enfants = parseInt(document.getElementById("f-nb_enfants").value)||0;
+  d.nb_accompagnateurs = parseInt(document.getElementById("f-nb_accompagnateurs").value)||0;
+  d.nb_gratuites = parseInt(document.getElementById("f-nb_gratuites").value)||0;
+  d.remise = parseFloat(document.getElementById("f-remise").value)||0;
+  d.frais_dossier_montant = parseFloat(document.getElementById("f-frais_dossier").value)||0;
+  d.sous_total = currentDossierDraft._sousTotal||0;
+  d.total_ttc = currentDossierDraft._totalTTC||0;
+  d.acompte_attendu = parseFloat(document.getElementById("f-acompte_attendu").value)||0;
+  d.acompte_paye = parseFloat(document.getElementById("f-acompte_paye").value)||0;
+  d.acompte_date = document.getElementById("f-acompte_date").value;
+  d.acompte_mode = document.getElementById("f-acompte_mode").value;
+  d.solde_attendu = parseFloat(document.getElementById("f-solde_attendu").value)||0;
+  d.solde_paye = parseFloat(document.getElementById("f-solde_paye").value)||0;
+  d.solde_date = document.getElementById("f-solde_date").value;
+  d.solde_mode = document.getElementById("f-solde_mode").value;
+  d.notes = document.getElementById("f-notes").value;
+}
+
+async function enregistrerDossier(){
+  lireFormulaireDossier();
+  try{
+    const payload = { action:"saveDossier", dossier:currentDossierDraft.dossier, lignes:currentDossierDraft.lignes, frais:currentDossierDraft.frais };
+    const res = await apiPost(payload);
+    showToast("Dossier enregistré (" + res.numero_devis + ")");
+    document.getElementById("modal-dossier").classList.remove("open");
+    await loadAll();
+  }catch(err){
+    showToast("Erreur d'enregistrement : " + err.message, true);
+  }
+}
+async function supprimerDossierCourant(){
+  if(!confirm("Supprimer définitivement ce dossier ? Cette action est irréversible.")) return;
+  try{
+    await apiPost({ action:"deleteDossier", id:currentDossierDraft.dossier.id });
+    showToast("Dossier supprimé");
+    document.getElementById("modal-dossier").classList.remove("open");
+    await loadAll();
+  }catch(err){
+    showToast("Erreur de suppression : " + err.message, true);
+  }
+}
+
+/* ============================================================
+   GENERATION DE DOCUMENTS (DEVIS / BON D'ECHANGE / CONTRAT)
+   ============================================================ */
+function entetePrestataire(){
+  return `
+    <div class="doc-logo">Contrées Vertes</div>
+    <div style="font-size:0.78rem;color:#555;">Office de Tourisme - Agence d'Attractivité Touristique de l'Agglomération de Tulle<br>
+    14 place Gambetta - 19000 Tulle - Tél. 05 55 26 59 61 - service-groupes@contreesvertes.com<br>
+    Association loi 1901 - SIRET 519 662 191 00039 - Immatriculation IM019240002</div>
+  `;
+}
+
+function imprimerDocument(type){
+  lireFormulaireDossier();
+  recalculerTotaux();
+  const d = currentDossierDraft.dossier;
+  const lignes = currentDossierDraft.lignes;
+  let html = "";
+  if(type==="devis") html = htmlDevis(d, lignes);
+  if(type==="bon_echange") html = htmlBonEchange(d, lignes);
+  if(type==="contrat") html = htmlContrat(d, lignes);
+  document.getElementById("print-area").innerHTML = html;
+  setTimeout(()=>window.print(), 150);
+}
+
+function htmlDevis(d, lignes){
+  const sousTotal = lignes.reduce((s,l)=>s+(l.total||0),0);
+  const totalTTC = sousTotal - (parseFloat(d.remise)||0) + (parseFloat(d.frais_dossier_montant)||0);
+  return `
+  <div class="doc-page">
+    ${entetePrestataire()}
+    <div class="doc-title">Devis n° ${d.numero_devis||""}</div>
+    <table class="doc-meta-table">
+      <tr><td class="k">Client</td><td>${d.client_nom||""} ${d.organisme ? "- " + d.organisme : ""}</td></tr>
+      <tr><td class="k">Contact</td><td>${d.contact_nom||""} - ${d.contact_tel||""} - ${d.contact_email||""}</td></tr>
+      <tr><td class="k">Lieu de la visite</td><td>${d.lieu_visite||""}</td></tr>
+      <tr><td class="k">Date de la visite</td><td>${dateFR(d.date_visite)}</td></tr>
+      <tr><td class="k">Participants</td><td>${d.nb_adultes||0} adultes, ${d.nb_enfants||0} enfants, ${d.nb_accompagnateurs||0} accompagnateur(s), ${d.nb_gratuites||0} gratuité(s)</td></tr>
+    </table>
+    <table class="doc-lines-table">
+      <thead><tr><th>Description</th><th>Prix unitaire</th><th>Quantité</th><th>Total</th></tr></thead>
+      <tbody>
+        ${lignes.map(l=>`<tr><td>${l.designation||""}</td><td>${euros(l.prix_unitaire)}</td><td>${l.quantite}</td><td>${euros(l.total)}</td></tr>`).join("")}
+      </tbody>
+    </table>
+    <table class="doc-meta-table" style="width:340px;margin-left:auto;">
+      <tr><td class="k">Sous-total</td><td>${euros(sousTotal)}</td></tr>
+      <tr><td class="k">Remise</td><td>${euros(d.remise)}</td></tr>
+      <tr><td class="k">Frais de dossier</td><td>${euros(d.frais_dossier_montant)}</td></tr>
+      <tr><td class="k">TVA</td><td>Non applicable, art. 293B du CGI</td></tr>
+      <tr><td class="k">TOTAL TTC</td><td><strong>${euros(totalTTC)}</strong></td></tr>
+    </table>
+    <p style="font-size:0.82rem;">Conditions de règlement : acompte de 30% à la réservation, solde 30 jours avant la date de la prestation. Devis valable 30 jours.</p>
+    <div class="doc-foot">Agence d'attractivité touristique de l'Agglomération de Tulle - Association loi 1901 - IM019240002<br>Garantie financière GROUPAMA ASSURANCE-CRÉDIT &amp; CAUTION, 8-10 rue d'Astorg, 75008 Paris</div>
+  </div>`;
+}
+
+function htmlBonEchange(d, lignes){
+  return `
+  <div class="doc-page">
+    ${entetePrestataire()}
+    <div class="doc-title">Bon d'échange - Dossier n° ${d.numero_devis||""}</div>
+    <table class="doc-meta-table">
+      <tr><td class="k">Nom du client</td><td>${d.client_nom||""} ${d.organisme ? "- " + d.organisme : ""}</td></tr>
+      <tr><td class="k">Effectif</td><td>${(parseInt(d.nb_adultes)||0)+(parseInt(d.nb_enfants)||0)} personnes (dont ${d.nb_enfants||0} enfant(s), ${d.nb_gratuites||0} gratuité(s))</td></tr>
+      <tr><td class="k">Contact</td><td>${d.contact_nom||""} - ${d.contact_tel||""}</td></tr>
+      <tr><td class="k">Date et lieu</td><td>${dateFR(d.date_visite)} - ${d.lieu_visite||""}</td></tr>
+    </table>
+    <table class="doc-lines-table">
+      <thead><tr><th>Prestations réservées</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+      <tbody>
+        ${lignes.map(l=>`<tr><td>${l.designation||""}</td><td>${l.quantite}</td><td>${euros(l.prix_unitaire)}</td><td>${euros(l.total)}</td></tr>`).join("")}
+      </tbody>
+    </table>
+    <p style="font-size:0.82rem;">Le règlement de ces prestations sera effectué sur présentation d'une facture accompagnée de ce bon d'échange complété et signé.</p>
+    <table style="width:100%;margin-top:30px;"><tr>
+      <td style="width:50%;font-size:0.82rem;">Date et signature prestataire</td>
+      <td style="width:50%;font-size:0.82rem;">Date et signature client</td>
+    </tr></table>
+    <div class="doc-foot">14 place Gambetta - 19000 Tulle - Tél. 05 55 26 59 61</div>
+  </div>`;
+}
+
+function htmlContrat(d, lignes){
+  const sousTotal = lignes.reduce((s,l)=>s+(l.total||0),0);
+  const totalTTC = sousTotal - (parseFloat(d.remise)||0) + (parseFloat(d.frais_dossier_montant)||0);
+  return `
+  <div class="doc-page">
+    ${entetePrestataire()}
+    <div class="doc-title">Contrat de réservation n° ${d.numero_devis||""}</div>
+    <table class="doc-meta-table">
+      <tr><td class="k">Client / Organisme</td><td>${d.client_nom||""} ${d.organisme ? "- " + d.organisme : ""}</td></tr>
+      <tr><td class="k">Adresse</td><td>${d.adresse||""}</td></tr>
+      <tr><td class="k">Contact</td><td>${d.contact_nom||""} - ${d.contact_tel||""} - ${d.contact_email||""}</td></tr>
+      <tr><td class="k">Lieu et date de la visite</td><td>${d.lieu_visite||""} - ${dateFR(d.date_visite)}</td></tr>
+      <tr><td class="k">Participants</td><td>${d.nb_adultes||0} adultes, ${d.nb_enfants||0} enfants, ${d.nb_accompagnateurs||0} accompagnateur(s)</td></tr>
+    </table>
+    <table class="doc-lines-table">
+      <thead><tr><th>Prestations</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+      <tbody>
+        ${lignes.map(l=>`<tr><td>${l.designation||""}</td><td>${l.quantite}</td><td>${euros(l.prix_unitaire)}</td><td>${euros(l.total)}</td></tr>`).join("")}
+      </tbody>
+    </table>
+    <table class="doc-meta-table" style="width:340px;margin-left:auto;">
+      <tr><td class="k">TOTAL TTC</td><td><strong>${euros(totalTTC)}</strong></td></tr>
+      <tr><td class="k">1er acompte (30%)</td><td>${euros(d.acompte_attendu)}</td></tr>
+      <tr><td class="k">Solde</td><td>${euros(totalTTC - (parseFloat(d.acompte_attendu)||0))}</td></tr>
+    </table>
+    <p style="font-size:0.8rem;">Le solde doit être réglé, au plus tard et sans rappel, un mois avant le début de la prestation. Paiement par chèque à l'ordre de l'Office de Tourisme de Tulle, ou par virement (IBAN FR76 1680 6099 3927 3090 8800 003 / BIC AGRIFRPP868).</p>
+    <p style="font-size:0.8rem;">Le client certifie avoir pris connaissance des Conditions Générales de Vente jointes en annexe et y souscrire dans leur intégralité. Toute annulation du fait du client donnera lieu à des frais selon le barème en vigueur dans les CGV.</p>
+    <table style="width:100%;margin-top:30px;"><tr>
+      <td style="width:50%;font-size:0.82rem;">Signature et cachet du client<br>(mention "lu et approuvé")</td>
+      <td style="width:50%;font-size:0.82rem;">Signature du vendeur</td>
+    </tr></table>
+    <div class="doc-foot">Annexe 1 : Conditions Générales de Vente - Agence d'attractivité touristique de l'Agglomération de Tulle</div>
+  </div>`;
+}
+
+/* ============================================================
+   CATALOGUE TARIFAIRE
+   ============================================================ */
+function renderCatalogueTable(){
+  const search = (document.getElementById("catalogue-search").value||"").toLowerCase();
+  const liste = state.tarifs.filter(t=> !search || (t.designation||"").toLowerCase().includes(search))
+    .sort((a,b)=>(a.categorie||"").localeCompare(b.categorie||"") || (a.designation||"").localeCompare(b.designation||""));
+  const tbody = document.getElementById("catalogue-tbody");
+  if(liste.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Aucune prestation trouvée.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = liste.map(t=>`
+    <tr data-id="${t.id}">
+      <td>${t.designation||""}</td>
+      <td>${t.categorie||""}</td>
+      <td>${euros(t.prix)}</td>
+      <td>${t.unite||""}</td>
+      <td>${t.seuil||""}</td>
+      <td style="opacity:0.7;font-size:0.8rem;">${t.notes||""}</td>
+      <td>
+        <button class="btn small ghost t-editer">Modifier</button>
+        <button class="btn small danger t-supprimer">×</button>
+      </td>
+    </tr>
+  `).join("");
+  tbody.querySelectorAll(".t-editer").forEach(b=>b.addEventListener("click", (e)=>openModalTarif(e.target.closest("tr").dataset.id)));
+  tbody.querySelectorAll(".t-supprimer").forEach(b=>b.addEventListener("click", async (e)=>{
+    if(!confirm("Supprimer cette prestation du catalogue ?")) return;
+    try{
+      await apiPost({action:"deleteTarif", id:e.target.closest("tr").dataset.id});
+      showToast("Prestation supprimée");
+      await loadAll();
+    }catch(err){ showToast("Erreur : " + err.message, true); }
+  }));
+}
+document.getElementById("catalogue-search").addEventListener("input", renderCatalogueTable);
+document.getElementById("btn-nouveau-tarif").addEventListener("click", ()=>openModalTarif(null));
+
+function openModalTarif(id){
+  const t = id ? state.tarifs.find(x=>x.id===id) : {id:null, designation:"", prix:0, categorie:"", unite:"forfait", seuil:"", notes:""};
+  document.getElementById("modal-tarif-title").textContent = id ? "Modifier la prestation" : "Nouvelle prestation";
+  document.getElementById("modal-tarif-body").innerHTML = `
+    <div class="form-field" style="margin-bottom:12px;"><label>Désignation</label><input type="text" id="t-designation" value="${(t.designation||"").replace(/"/g,"&quot;")}"></div>
+    <div class="form-grid">
+      <div class="form-field"><label>Prix (€)</label><input type="number" step="0.01" id="t-prix" value="${t.prix||0}"></div>
+      <div class="form-field"><label>Catégorie</label><input type="text" id="t-categorie" value="${t.categorie||""}"></div>
+      <div class="form-field"><label>Unité</label>
+        <select id="t-unite">
+          <option value="forfait" ${t.unite==="forfait"?"selected":""}>Forfait</option>
+          <option value="personne" ${t.unite==="personne"?"selected":""}>Par personne</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Seuil pax (si palier)</label><input type="text" id="t-seuil" value="${t.seuil||""}"></div>
+    </div>
+    <div class="form-field" style="margin:12px 0;"><label>Notes</label><textarea id="t-notes">${t.notes||""}</textarea></div>
+    <div class="toolbar" style="justify-content:flex-end;">
+      <button class="btn ghost" id="t-btn-annuler">Annuler</button>
+      <button class="btn" id="t-btn-enregistrer">Enregistrer</button>
+    </div>
+  `;
+  document.getElementById("t-btn-annuler").addEventListener("click", ()=>document.getElementById("modal-tarif").classList.remove("open"));
+  document.getElementById("t-btn-enregistrer").addEventListener("click", async ()=>{
+    const tarif = {
+      id: t.id,
+      designation: document.getElementById("t-designation").value,
+      prix: parseFloat(document.getElementById("t-prix").value)||0,
+      categorie: document.getElementById("t-categorie").value,
+      unite: document.getElementById("t-unite").value,
+      seuil: document.getElementById("t-seuil").value,
+      notes: document.getElementById("t-notes").value
+    };
+    try{
+      await apiPost({action:"saveTarif", tarif});
+      showToast("Prestation enregistrée");
+      document.getElementById("modal-tarif").classList.remove("open");
+      await loadAll();
+    }catch(err){ showToast("Erreur : " + err.message, true); }
+  });
+  document.getElementById("modal-tarif").classList.add("open");
+}
+document.getElementById("modal-tarif-close").addEventListener("click", ()=>document.getElementById("modal-tarif").classList.remove("open"));
+
+/* ============================================================
+   CLIENTS
+   ============================================================ */
+function statsClient(client){
+  const dossiersClient = state.dossiers.filter(d=>
+    (d.client_nom && d.client_nom===client.nom) || (d.organisme && d.organisme===client.organisme && client.organisme)
+  );
+  const ca = dossiersClient.filter(d=>d.statut!=="annule").reduce((s,d)=>s+(parseFloat(d.total_ttc)||0),0);
+  return { nb: dossiersClient.length, ca };
+}
+
+function renderClientsTable(){
+  const search = (document.getElementById("clients-search").value||"").toLowerCase();
+  const liste = state.clients.filter(c=> !search || [(c.nom||""),(c.organisme||"")].join(" ").toLowerCase().includes(search))
+    .sort((a,b)=>(a.nom||"").localeCompare(b.nom||""));
+  const tbody = document.getElementById("clients-tbody");
+  if(liste.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Aucun client enregistré pour le moment.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = liste.map(c=>{
+    const stats = statsClient(c);
+    return `
+    <tr data-id="${c.id}">
+      <td>${c.nom||""}${c.organisme ? " <span style='opacity:0.6'>("+c.organisme+")</span>" : ""}</td>
+      <td>${c.contact_nom||""}</td>
+      <td>${c.tel||""}${c.email ? " / " + c.email : ""}</td>
+      <td>${c.type||""}</td>
+      <td>${stats.nb}</td>
+      <td>${euros(stats.ca)}</td>
+      <td>
+        <button class="btn small ghost c-editer">Modifier</button>
+        <button class="btn small danger c-supprimer">×</button>
+      </td>
+    </tr>`;
+  }).join("");
+  tbody.querySelectorAll(".c-editer").forEach(b=>b.addEventListener("click", (e)=>openModalClient(e.target.closest("tr").dataset.id)));
+  tbody.querySelectorAll(".c-supprimer").forEach(b=>b.addEventListener("click", async (e)=>{
+    if(!confirm("Supprimer ce client ?")) return;
+    try{
+      await apiPost({action:"deleteClient", id:e.target.closest("tr").dataset.id});
+      showToast("Client supprimé");
+      await loadAll();
+    }catch(err){ showToast("Erreur : " + err.message, true); }
+  }));
+}
+document.getElementById("clients-search").addEventListener("input", renderClientsTable);
+document.getElementById("btn-nouveau-client").addEventListener("click", ()=>openModalClient(null));
+
+function openModalClient(id){
+  const c = id ? state.clients.find(x=>x.id===id) : {id:null, nom:"", organisme:"", contact_nom:"", tel:"", email:"", adresse:"", type:"", source:"", notes:""};
+  document.getElementById("modal-client-title").textContent = id ? "Modifier le client" : "Nouveau client";
+  document.getElementById("modal-client-body").innerHTML = `
+    <div class="form-grid">
+      <div class="form-field"><label>Nom</label><input type="text" id="c-nom" value="${(c.nom||"").replace(/"/g,"&quot;")}"></div>
+      <div class="form-field"><label>Organisme</label><input type="text" id="c-organisme" value="${c.organisme||""}"></div>
+      <div class="form-field"><label>Contact</label><input type="text" id="c-contact_nom" value="${c.contact_nom||""}"></div>
+      <div class="form-field"><label>Téléphone</label><input type="text" id="c-tel" value="${c.tel||""}"></div>
+      <div class="form-field"><label>Email</label><input type="text" id="c-email" value="${c.email||""}"></div>
+      <div class="form-field"><label>Type</label>
+        <select id="c-type">
+          <option value="" ${!c.type?"selected":""}>-</option>
+          <option value="Association" ${c.type==="Association"?"selected":""}>Association</option>
+          <option value="Agence/Voyagiste" ${c.type==="Agence/Voyagiste"?"selected":""}>Agence / Voyagiste</option>
+          <option value="Scolaire" ${c.type==="Scolaire"?"selected":""}>Scolaire</option>
+          <option value="Comité d'entreprise" ${c.type==="Comité d'entreprise"?"selected":""}>Comité d'entreprise</option>
+          <option value="Particulier" ${c.type==="Particulier"?"selected":""}>Particulier</option>
+          <option value="Institution" ${c.type==="Institution"?"selected":""}>Institution</option>
+          <option value="Autre" ${c.type==="Autre"?"selected":""}>Autre</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-field" style="margin:12px 0;"><label>Adresse</label><input type="text" id="c-adresse" value="${c.adresse||""}"></div>
+    <div class="form-field" style="margin-bottom:12px;"><label>Notes</label><textarea id="c-notes">${c.notes||""}</textarea></div>
+    <div class="toolbar" style="justify-content:flex-end;">
+      <button class="btn ghost" id="c-btn-annuler">Annuler</button>
+      <button class="btn" id="c-btn-enregistrer">Enregistrer</button>
+    </div>
+  `;
+  document.getElementById("c-btn-annuler").addEventListener("click", ()=>document.getElementById("modal-client").classList.remove("open"));
+  document.getElementById("c-btn-enregistrer").addEventListener("click", async ()=>{
+    const client = {
+      id: c.id,
+      nom: document.getElementById("c-nom").value,
+      organisme: document.getElementById("c-organisme").value,
+      contact_nom: document.getElementById("c-contact_nom").value,
+      tel: document.getElementById("c-tel").value,
+      email: document.getElementById("c-email").value,
+      adresse: document.getElementById("c-adresse").value,
+      type: document.getElementById("c-type").value,
+      notes: document.getElementById("c-notes").value,
+      date_dernier_contact: new Date().toISOString().slice(0,10)
+    };
+    try{
+      await apiPost({action:"saveClient", client});
+      showToast("Client enregistré");
+      document.getElementById("modal-client").classList.remove("open");
+      await loadAll();
+    }catch(err){ showToast("Erreur : " + err.message, true); }
+  });
+  document.getElementById("modal-client").classList.add("open");
+}
+document.getElementById("modal-client-close").addEventListener("click", ()=>document.getElementById("modal-client").classList.remove("open"));
+
+/* ============================================================
+   INITIALISATION
+   ============================================================ */
+if(CONFIG.API_URL.includes("COLLEZ_ICI")){
+  setSyncStatus("Configuration requise", false, true);
+  showToast("Pensez à coller l'URL de votre Apps Script dans CONFIG.API_URL en haut du fichier.", true);
+} else {
+  loadAll();
+}
+</script>
+</body>
+</html>
