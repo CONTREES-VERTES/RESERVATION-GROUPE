@@ -283,10 +283,12 @@ h2.section-title{
     <div class="chart-card">
       <h4 style="font-family:var(--font-sub);text-transform:uppercase;letter-spacing:1px;color:var(--vert-foret);margin-top:0;">Chiffre d'affaires par mois (date de visite)</h4>
       <canvas id="chart-ca"></canvas>
+      <p id="chart-ca-indisponible" style="display:none;opacity:0.7;font-size:0.85rem;">Graphique temporairement indisponible (librairie non chargée). Les chiffres ci-dessus restent fiables.</p>
     </div>
     <div class="chart-card">
       <h4 style="font-family:var(--font-sub);text-transform:uppercase;letter-spacing:1px;color:var(--vert-foret);margin-top:0;">Dossiers par statut</h4>
       <canvas id="chart-statuts"></canvas>
+      <p id="chart-statuts-indisponible" style="display:none;opacity:0.7;font-size:0.85rem;">Graphique temporairement indisponible (librairie non chargée). Les chiffres ci-dessus restent fiables.</p>
     </div>
   </section>
 
@@ -431,7 +433,7 @@ h2.section-title{
    CONFIGURATION - A COMPLETER APRES DEPLOIEMENT APPS SCRIPT
    ============================================================ */
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbyW97d1B4fx5n2IWKoTbtLR2FiuhBQMcgSld-U-WObwsEd1R0WBAslGr1OREq2zkpY/exec"
+  API_URL: "COLLEZ_ICI_VOTRE_URL_APPS_SCRIPT_QUI_SE_TERMINE_PAR_/exec"
 };
 
 /* ============================================================
@@ -506,25 +508,32 @@ async function apiPost(payload){
 }
 
 async function loadAll(){
+  let reponse;
   try{
     setSyncStatus("Synchronisation...", false);
-    const reponse = await apiGetAll();
-    state = {
-      dossiers: reponse.dossiers || [],
-      lignes: reponse.lignes || [],
-      fraisPrestataires: reponse.fraisPrestataires || [],
-      tarifs: reponse.tarifs || [],
-      clients: reponse.clients || [],
-      prestataires: reponse.prestataires || []
-    };
-    if(!("prestataires" in reponse)){
-      showToast("Le script Apps Script utilisé n'est pas à jour (onglet Prestataires manquant) - redéployez la dernière version de Code.gs", true);
-    }
-    setSyncStatus("A jour", true);
-    renderAll();
+    reponse = await apiGetAll();
   }catch(err){
     setSyncStatus("Erreur de connexion", false, true);
     showToast("Impossible de charger les données : " + err.message, true);
+    return;
+  }
+  state = {
+    dossiers: reponse.dossiers || [],
+    lignes: reponse.lignes || [],
+    fraisPrestataires: reponse.fraisPrestataires || [],
+    tarifs: reponse.tarifs || [],
+    clients: reponse.clients || [],
+    prestataires: reponse.prestataires || []
+  };
+  if(!("prestataires" in reponse)){
+    showToast("Le script Apps Script utilisé n'est pas à jour (onglet Prestataires manquant) - redéployez la dernière version de Code.gs", true);
+  }
+  setSyncStatus("A jour", true);
+  try{
+    renderAll();
+  }catch(err){
+    showToast("Données chargées, mais un affichage a échoué : " + err.message, true);
+    console.error(err);
   }
 }
 function setSyncStatus(text, ok, error){
@@ -605,6 +614,26 @@ function renderDashboard(){
     parMoisForfait[m] = (parMoisForfait[m]||0) + (parseFloat(d.total_ttc)||0);
   });
   const moisTries = Array.from(new Set([...Object.keys(parMoisSimple), ...Object.keys(parMoisForfait)])).sort();
+
+  // Repartition par statut
+  const parStatut = {};
+  STATUTS.forEach(s=> parStatut[s.label] = 0);
+  state.dossiers.forEach(d=>{ parStatut[statutLabel(d.statut)] = (parStatut[statutLabel(d.statut)]||0) + 1; });
+
+  if(typeof Chart === "undefined"){
+    // La librairie de graphiques n'a pas pu se charger (reseau/pare-feu) :
+    // le reste du tableau de bord reste fonctionnel, on affiche juste un message a la place.
+    document.getElementById("chart-ca").style.display = "none";
+    document.getElementById("chart-ca-indisponible").style.display = "block";
+    document.getElementById("chart-statuts").style.display = "none";
+    document.getElementById("chart-statuts-indisponible").style.display = "block";
+    return;
+  }
+  document.getElementById("chart-ca").style.display = "block";
+  document.getElementById("chart-ca-indisponible").style.display = "none";
+  document.getElementById("chart-statuts").style.display = "block";
+  document.getElementById("chart-statuts-indisponible").style.display = "none";
+
   const ctxCA = document.getElementById("chart-ca").getContext("2d");
   if(chartCA) chartCA.destroy();
   chartCA = new Chart(ctxCA, {
@@ -619,10 +648,6 @@ function renderDashboard(){
     options:{ responsive:true, scales:{ x:{stacked:true}, y:{stacked:true} } }
   });
 
-  // Graphique repartition par statut
-  const parStatut = {};
-  STATUTS.forEach(s=> parStatut[s.label] = 0);
-  state.dossiers.forEach(d=>{ parStatut[statutLabel(d.statut)] = (parStatut[statutLabel(d.statut)]||0) + 1; });
   const ctxS = document.getElementById("chart-statuts").getContext("2d");
   if(chartStatuts) chartStatuts.destroy();
   chartStatuts = new Chart(ctxS, {
