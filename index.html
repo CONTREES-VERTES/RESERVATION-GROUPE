@@ -229,9 +229,9 @@ h2.section-title{
 /* ===================== PRINT ===================== */
 #print-area{display:none;}
 @media print{
-  body *{visibility:hidden;}
-  #print-area, #print-area *{visibility:visible;}
-  #print-area{display:block;position:absolute;top:0;left:0;width:100%;}
+  body > *:not(#print-area){display:none !important;}
+  #print-area{display:block !important;position:static !important;background:white;}
+  body{background:white !important;margin:0;padding:0;}
 }
 .doc-page{font-family:var(--font-body);color:#222;padding:24px;max-width:760px;margin:0 auto;page-break-after:always;}
 .doc-page:last-child{page-break-after:auto;}
@@ -453,7 +453,7 @@ h2.section-title{
    CONFIGURATION - A COMPLETER APRES DEPLOIEMENT APPS SCRIPT
    ============================================================ */
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbyW97d1B4fx5n2IWKoTbtLR2FiuhBQMcgSld-U-WObwsEd1R0WBAslGr1OREq2zkpY/exec"
+  API_URL: "COLLEZ_ICI_VOTRE_URL_APPS_SCRIPT_QUI_SE_TERMINE_PAR_/exec"
 };
 
 /* ============================================================
@@ -978,6 +978,7 @@ function ficheDossierHTML(){
         <button class="btn ghost" id="f-btn-devis">Aperçu Devis</button>
         <button class="btn ghost" id="f-btn-bon-echange">Aperçu Bon(s) d'échange</button>
         <button class="btn ghost" id="f-btn-contrat">Aperçu Contrat</button>
+        <button class="btn ghost" id="f-btn-contrat-sans-prix">Contrat sans prix</button>
       </div>
     </div>
 
@@ -1198,6 +1199,7 @@ function wireFicheDossierEvents(){
   document.getElementById("f-btn-devis").addEventListener("click", ()=>imprimerDocument("devis"));
   document.getElementById("f-btn-bon-echange").addEventListener("click", ()=>imprimerDocument("bon_echange"));
   document.getElementById("f-btn-contrat").addEventListener("click", ()=>imprimerDocument("contrat"));
+  document.getElementById("f-btn-contrat-sans-prix").addEventListener("click", ()=>imprimerDocument("contrat_sans_prix"));
 }
 
 function lireFormulaireDossier(){
@@ -1301,6 +1303,7 @@ function imprimerDocument(type){
   if(type==="devis") html = htmlDevis(d, lignes);
   if(type==="bon_echange") html = htmlBonsEchange(d, lignes);
   if(type==="contrat") html = htmlContrat(d, lignes);
+  if(type==="contrat_sans_prix") html = htmlContratSansPrix(d, lignes);
   document.getElementById("print-area").innerHTML = html;
   setTimeout(()=>window.print(), 150);
 }
@@ -1414,6 +1417,158 @@ function htmlContrat(d, lignes){
       <td style="width:50%;font-size:0.82rem;">Signature du vendeur</td>
     </tr></table>
     <div class="doc-foot">Annexe 1 : Conditions Générales de Vente - Agence d'attractivité touristique de l'Agglomération de Tulle</div>
+  </div>`;
+}
+
+function htmlContratSansPrix(d, lignes){
+  const totalTTC = (parseFloat(d.total_ttc)||0);
+  const acompte1 = (parseFloat(d.acompte_attendu)||0);
+  const solde = totalTTC - acompte1;
+  // Date limite de renvoi = 1 mois avant la visite (affichage simple)
+  const dateVisite = d.date_visite ? new Date(d.date_visite) : null;
+  let dateLimite = "";
+  if(dateVisite && !isNaN(dateVisite)){
+    const dl = new Date(dateVisite);
+    dl.setMonth(dl.getMonth()-1);
+    dateLimite = dl.toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
+  }
+  // Numérotation contrat : on reprend le numero_devis (ex. "18/2026") en formattant "2026/18"
+  let numContrat = d.numero_devis || "";
+  const m = numContrat.match(/^(\d+)\/(\d+)$/);
+  if(m) numContrat = m[2]+"/"+m[1];
+
+  return `
+  <div class="doc-page" style="font-family:Arial,Helvetica,sans-serif;font-size:0.82rem;line-height:1.5;color:#222;padding:28px 36px;max-width:760px;margin:0 auto;">
+    <!-- EN-TETE -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+      <img src="data:image/png;base64,${DOC_LOGO_BASE64}" alt="Contrées Vertes" style="height:80px;width:80px;">
+      <div style="text-align:center;flex:1;padding:0 20px;">
+        <div style="font-size:1rem;font-weight:bold;color:#4B6239;">Contrat de réservation N°</div>
+        <div style="font-size:1.3rem;font-weight:bold;border:2px solid #5D7E8E;display:inline-block;padding:4px 18px;margin-top:4px;">${numContrat}</div>
+      </div>
+      <div style="width:80px;"></div>
+    </div>
+    <div style="text-align:center;font-size:0.75rem;color:#555;margin-bottom:16px;">
+      À RETOURNER À OFFICE DE TOURISME CONTRÉES VERTES<br>
+      14 place Gambetta 19000 TULLE<br>
+      service-groupes@contreesvertes.com
+    </div>
+    <hr style="border:none;border-top:1px solid #ccc;margin-bottom:12px;">
+    <!-- VENDEUR -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:4px;">Entre le vendeur</div>
+    <p style="margin:0 0 10px 0;">L'Agence d'Attractivité Touristique de l'Agglomération de Tulle dit Office de Tourisme - 14 place Gambetta - 19000 Tulle<br>
+    E-mail : service-groupes@contreesvertes.com &nbsp;&nbsp; Tél. : 06 08 88 28 08</p>
+    <!-- CLIENT -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:6px;">Et le client</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+      <tr>
+        <td style="width:38%;padding:3px 6px;">Organisme&nbsp;:</td>
+        <td style="padding:3px 6px;font-weight:bold;">${d.organisme||d.client_nom||""}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 6px;">Nom du responsable du groupe&nbsp;:</td>
+        <td style="padding:3px 6px;">${d.contact_nom||""}</td>
+      </tr>
+      <tr><td style="padding:3px 6px;">Fonction&nbsp;:</td><td style="padding:3px 6px;"></td></tr>
+      <tr><td style="padding:3px 6px;">Adresse&nbsp;:</td><td style="padding:3px 6px;">${d.adresse||""}</td></tr>
+      <tr><td style="padding:3px 6px;">Code Postal - Ville&nbsp;:</td><td style="padding:3px 6px;"></td></tr>
+      <tr><td style="padding:3px 6px;">Tél&nbsp;:</td><td style="padding:3px 6px;">${d.contact_tel||""}</td></tr>
+      <tr><td style="padding:3px 6px;">Email&nbsp;:</td><td style="padding:3px 6px;">${d.contact_email||""}</td></tr>
+    </table>
+    <!-- OBJET -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:4px;">Objet du contrat :</div>
+    <p style="margin:0 0 10px 0;font-size:0.78rem;">Le présent contrat a pour objet de réglementer les relations entre l'Office de Tourisme Contrées Vertes et le client. Le vendeur s'engage à organiser, pour le client, un accompagnement de groupe, conformément aux conditions générales de vente détaillées ci-après.</p>
+    <!-- DECLARATION CLIENT -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:4px;">Déclaration du client :</div>
+    <p style="margin:0 0 10px 0;font-size:0.78rem;">Le client déclare et garantit que toutes ses coordonnées figurant sur le bulletin de réservation sont authentiques et exactes. Il déclare qu'il a pris connaissance des conditions générales de ventes et qu'il accepte de régler toutes les prestations commandées.</p>
+    <!-- VOYAGE -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:4px;">Votre voyage :</div>
+    <p style="margin:0 0 6px 0;">Dates de voyage : ${dateFR(d.date_visite)||""}</p>
+    <!-- PARTICIPANTS -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:4px;">Participants dans le groupe :</div>
+    <table style="width:100%;margin-bottom:4px;">
+      <tr>
+        <td>Total adulte : ${d.nb_adultes||0}</td>
+        <td>Total enfant : ${d.nb_enfants||0}</td>
+        <td>Chauffeur / accompagnateur : ${d.nb_accompagnateurs||0}</td>
+      </tr>
+    </table>
+    <p style="margin:0 0 12px 0;">Total participants : <strong>${(parseInt(d.nb_adultes)||0)+(parseInt(d.nb_enfants)||0)+(parseInt(d.nb_accompagnateurs)||0)} personnes</strong></p>
+    <!-- FORMULE SEJOUR -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:4px;">Formule de séjour</div>
+    <div style="margin-bottom:10px;">
+      <div>&#9744; Nuit + petit-déjeuner &nbsp;&nbsp;&nbsp;&nbsp; &#9744; Nuit sans petit-déjeuner &nbsp;&nbsp;&nbsp;&nbsp; &#9744; Nuit + Pension complète</div>
+      <div>&#9744; Nuit + Demi-pension &nbsp;&nbsp;&nbsp;&nbsp; &#9744; Sans hébergement</div>
+    </div>
+    <!-- SITES DE VISITE -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:6px;">Sites de visite</div>
+    <div style="margin-bottom:10px;color:#4B6239;">
+      ${lignes.map(l=>`<div>${l.designation||""}</div>`).join("")}
+    </div>
+    <!-- PRESTATIONS SUPPLEMENTAIRES -->
+    <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:4px;">Prestations supplémentaires</div>
+    <div style="min-height:36px;margin-bottom:8px;color:#4B6239;"></div>
+    <div style="margin-bottom:12px;color:#777;font-size:0.75rem;">Observations éventuelles : (allergie, régime particulier, handicap...) : à compléter</div>
+    <!-- VERSEMENT -->
+    <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+      <thead>
+        <tr style="background:#5D7E8E;color:#fff;">
+          <td colspan="2" style="padding:6px 10px;text-align:center;font-weight:bold;">Versement du séjour</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border:1px solid #ccc;">
+          <td style="padding:6px 10px;border:1px solid #ccc;">1er acompte de 30 % du prix total du séjour à régler à la réservation</td>
+          <td style="padding:6px 10px;border:1px solid #ccc;font-weight:bold;">${acompte1>0 ? acompte1.toFixed(0)+"€" : "&nbsp;"}</td>
+        </tr>
+        <tr style="border:1px solid #ccc;">
+          <td style="padding:6px 10px;border:1px solid #ccc;">2ème acompte de ___ % du prix total du séjour à régler le ___</td>
+          <td style="padding:6px 10px;border:1px solid #ccc;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;€</td>
+        </tr>
+        <tr style="border:1px solid #ccc;">
+          <td colspan="2" style="padding:6px 10px;border:1px solid #ccc;background:#f2f2f2;font-weight:bold;text-align:center;">Solde du séjour à régler au plus tard le</td>
+        </tr>
+        <tr style="border:1px solid #ccc;">
+          <td style="padding:6px 10px;border:1px solid #ccc;">${dateLimite ? "le "+dateLimite : "_________________________"}</td>
+          <td style="padding:6px 10px;border:1px solid #ccc;font-weight:bold;">${solde>0 ? solde.toFixed(0)+"€" : "&nbsp;"}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.72rem;font-style:italic;margin:0 0 8px 0;">ATTENTION ! Le solde doit être réglé, au plus tard et sans rappel de notre part, un mois avant le début de la prestation. Si vous réservez moins d'un mois avant le début du séjour, joignez le paiement total du séjour.</p>
+    <div style="margin-bottom:8px;">
+      &#9746; Paiement par chèque (à l'ordre de L'Office de Tourisme de Tulle)<br>
+      &#9744; Paiement par virement bancaire : IBAN - FR76 1680 6099 3927 3090 8800 003 / Code BIC AGRIFRPP868
+    </div>
+    <div style="margin-bottom:8px;font-weight:bold;color:#4B6239;">Ce prix ne comprend pas :</div>
+    <div style="margin-bottom:10px;">
+      &#9746; les dépenses personnelles<br>
+      &#9746; pourboires et autres gratifications<br>
+      &#9746; Les services d'un transporteur
+    </div>
+    <p style="font-size:0.72rem;margin:0 0 6px 0;">Le vendeur se réserve le droit, en cas de non-respect du calendrier de paiement, de constater l'annulation du contrat par le client et d'exiger, sans mise en demeure préalable, l'application des pénalités d'annulation prévues dans les CGV.</p>
+    <p style="font-size:0.72rem;margin:0 0 6px 0;font-weight:bold;">Prestations : Les prestations incluses dans ce voyage sont mentionnées exactement dans le contrat. Toute modification devra faire l'objet d'un avenant signé par les deux parties.</p>
+    <p style="font-size:0.72rem;margin:0 0 4px 0;font-weight:bold;">Validité du contrat : </p>
+    <p style="font-size:0.72rem;margin:0 0 10px 0;">Les dispositions du présent contrat seront caduques s'il n'est pas renvoyé à l'organisateur, dûment signé, avant le ${dateLimite||"_________________________"} accompagné du montant de l'acompte mentionné ci-dessus.</p>
+    <p style="font-size:0.72rem;margin:0 0 12px 0;">Le client certifie par la présente et déclare avoir pris connaissance des Conditions Générales de Vente et y avoir souscrit dans leur intégralité.</p>
+    <p style="font-size:0.72rem;font-style:italic;margin:0 0 16px 0;">Annexe 1 : conditions générales de vente</p>
+    <p style="margin:0 0 24px 0;">Fait à Tulle le ________________________</p>
+    <table style="width:100%;margin-top:10px;">
+      <tr>
+        <td style="width:50%;vertical-align:top;font-size:0.82rem;">
+          Mention &laquo; lu et approuvé &raquo;<br>
+          Nom Prénom ________________________<br><br>
+          Signature et cachet du Client<br><br><br><br>
+          <div style="font-size:0.72rem;">${d.organisme||d.client_nom||""}</div>
+        </td>
+        <td style="width:50%;vertical-align:top;font-size:0.82rem;">
+          L'Office de Tourisme Contrées Vertes<br>
+          Fabien LESPINAS<br>
+          Signature du Vendeur<br><br><br><br>
+          <div style="font-size:0.68rem;color:#555;">Agence d'attractivité touristique de l'Agglomération de Tulle<br>14 place Gambetta - 19000 Tulle<br>+33 (0)5 55 26 59 61</div>
+        </td>
+      </tr>
+    </table>
+    <div style="font-size:0.65rem;color:#888;text-align:center;margin-top:18px;border-top:1px solid #ccc;padding-top:8px;">contrees-vertes.com &nbsp;&nbsp; Tél. +33 (0)5 55 26 59 61 &nbsp;&nbsp; 14 Place Gambetta - 19000 Tulle</div>
   </div>`;
 }
 
