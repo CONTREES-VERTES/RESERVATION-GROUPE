@@ -230,8 +230,9 @@ h2.section-title{
 #print-area{display:none;}
 @media print{
   body > *:not(#print-area){display:none !important;}
-  #print-area{display:block !important;position:static !important;background:white;}
-  body{background:white !important;margin:0;padding:0;}
+  #print-area{display:block !important;position:static !important;background:white !important;}
+  html,body{background:white !important;margin:0;padding:0;}
+  .doc-page{background:white !important;}
 }
 .doc-page{font-family:var(--font-body);color:#222;padding:24px;max-width:760px;margin:0 auto;page-break-after:always;}
 .doc-page:last-child{page-break-after:auto;}
@@ -453,7 +454,7 @@ h2.section-title{
    CONFIGURATION - A COMPLETER APRES DEPLOIEMENT APPS SCRIPT
    ============================================================ */
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbyW97d1B4fx5n2IWKoTbtLR2FiuhBQMcgSld-U-WObwsEd1R0WBAslGr1OREq2zkpY/exec"
+  API_URL: "COLLEZ_ICI_VOTRE_URL_APPS_SCRIPT_QUI_SE_TERMINE_PAR_/exec"
 };
 
 /* ============================================================
