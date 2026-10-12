@@ -252,6 +252,34 @@ h2.section-title{
 .doc-lines-table td{padding:7px 9px;border-bottom:1px solid #eee;}
 .doc-foot{font-size:0.7rem;color:#777;text-align:center;margin-top:30px;border-top:1px solid #ddd;padding-top:10px;}
 
+/* ===================== TABLEAU DE COTATION (éditeur) ===================== */
+.cotation-editor-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.cotation-editor-table th{background:var(--bleu-gris);color:#fff;padding:6px 8px;text-align:left;font-family:var(--font-sub);text-transform:uppercase;font-size:0.72rem;letter-spacing:0.5px;}
+.cotation-editor-table .cat-row td{background:var(--vert-pale);font-weight:700;color:var(--vert-foret);padding:5px 8px;font-family:var(--font-sub);text-transform:uppercase;font-size:0.74rem;letter-spacing:0.5px;}
+.cotation-editor-table .cat-row .cat-add-btn{float:right;font-size:0.7rem;padding:1px 8px;cursor:pointer;border:1px solid var(--vert-foret);background:transparent;color:var(--vert-foret);border-radius:10px;font-family:var(--font-body);}
+.cotation-editor-table .data-row td{padding:3px 4px;border-bottom:1px solid #e8e8e8;}
+.cotation-editor-table .data-row input[type=text]{width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:3px;padding:3px 6px;font-size:0.82rem;}
+.cotation-editor-table .data-row input[type=number]{width:90px;box-sizing:border-box;border:1px solid #ddd;border-radius:3px;padding:3px 6px;font-size:0.82rem;text-align:right;}
+.cotation-editor-table .del-btn{cursor:pointer;background:none;border:none;color:#aaa;font-size:1rem;padding:0 4px;}
+.cotation-editor-table .del-btn:hover{color:#c0392b;}
+.cotation-totaux-box{background:var(--creme);border:1px solid #ddd;border-radius:6px;padding:12px 16px;margin-top:10px;font-size:0.84rem;}
+.cotation-totaux-box table{width:100%;max-width:420px;margin-left:auto;}
+.cotation-totaux-box td{padding:3px 8px;}
+.cotation-totaux-box td:last-child{text-align:right;font-weight:600;}
+.cotation-totaux-box .total-row td{border-top:2px solid var(--bleu-gris);padding-top:6px;font-size:0.95rem;color:var(--bleu-gris);}
+
+/* ===================== TABLEAU DE COTATION (impression) ===================== */
+.doc-cotation-section{margin-bottom:18px;}
+.doc-cotation-section h5{font-family:var(--font-sub);text-transform:uppercase;font-size:0.72rem;letter-spacing:0.5px;color:var(--vert-foret);margin:10px 0 4px 0;}
+.doc-cotation-table{width:100%;font-size:0.82rem;border-collapse:collapse;margin-bottom:6px;}
+.doc-cotation-table th{background:var(--bleu-pale);padding:5px 8px;text-align:left;color:var(--bleu-gris);font-family:var(--font-sub);text-transform:uppercase;font-size:0.7rem;letter-spacing:0.5px;}
+.doc-cotation-table td{padding:5px 8px;border-bottom:1px solid #eee;}
+.doc-cotation-table td.num{text-align:right;}
+.doc-cotation-totaux{width:100%;max-width:360px;margin-left:auto;font-size:0.82rem;border-collapse:collapse;margin-top:8px;}
+.doc-cotation-totaux td{padding:4px 8px;}
+.doc-cotation-totaux td:last-child{text-align:right;font-weight:600;}
+.doc-cotation-totaux .total-final td{border-top:2px solid var(--vert-foret);padding-top:6px;font-size:0.9rem;color:var(--vert-foret);}
+
 /* ===================== TOAST ===================== */
 #toast{
   position:fixed;bottom:20px;right:20px;background:var(--vert-foret);color:var(--creme);
@@ -284,9 +312,17 @@ h2.section-title{
 <nav id="tabs">
   <button class="tab-btn active" data-tab="dashboard">Tableau de bord</button>
   <button class="tab-btn" data-tab="dossiers">Dossiers</button>
-  <button class="tab-btn" data-tab="catalogue">Catalogue tarifaire</button>
+  <button class="tab-btn" data-tab="prestations">Prestations</button>
   <button class="tab-btn" data-tab="clients">Clients</button>
   <button class="tab-btn" data-tab="prestataires">Prestataires</button>
+  <button class="tab-btn" data-tab="relances">Relances groupes</button>
+  <div id="annee-filtre-wrapper" style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 10px;">
+    <label style="font-size:0.78rem;opacity:0.8;white-space:nowrap;">Année :</label>
+    <select id="annee-filtre" style="font-size:0.82rem;padding:4px 8px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer;">
+      <option value="">Toutes</option>
+    </select>
+    <button id="btn-nouvelle-annee" title="Ajouter une année" style="background:none;border:1px solid #ccc;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:1rem;line-height:1;padding:0;">+</button>
+  </div>
 </nav>
 
 <main>
@@ -344,17 +380,18 @@ h2.section-title{
     </div>
   </section>
 
-  <!-- ===================== CATALOGUE ===================== -->
-  <section class="tab-content" id="tab-catalogue">
-    <h2 class="section-title">Catalogue tarifaire</h2>
-    <div class="toolbar">
-      <input type="text" id="catalogue-search" placeholder="Rechercher une prestation...">
-      <button class="btn" id="btn-nouveau-tarif">+ Nouvelle prestation</button>
+  <!-- ===================== PRESTATIONS ===================== -->
+  <section class="tab-content" id="tab-prestations">
+    <h2 class="section-title">Prestations</h2>
+    <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
+      <input type="text" id="catalogue-search" placeholder="Rechercher désignation, catégorie, prestataire...">
+      <div id="filtre-categories" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"></div>
+      <button class="btn" id="btn-nouveau-tarif" style="margin-left:auto;">+ Nouvelle prestation</button>
     </div>
     <div class="data-table">
       <table>
         <thead>
-          <tr><th>Désignation</th><th>Catégorie</th><th>Prix</th><th>Unité</th><th>Seuil pax</th><th>Prestataire par défaut</th><th>Notes</th><th></th></tr>
+          <tr><th>Désignation</th><th>Catégorie</th><th>Prix vente</th><th>Prix achat</th><th>Marge</th><th>Unité</th><th>Seuil pax</th><th>Prestataire</th><th>Notes</th><th></th></tr>
         </thead>
         <tbody id="catalogue-tbody"></tbody>
       </table>
@@ -396,6 +433,46 @@ h2.section-title{
     </div>
   </section>
 
+  <!-- ===================== RELANCES GROUPES ===================== -->
+  <section class="tab-content" id="tab-relances">
+    <h2 class="section-title">Relances groupes</h2>
+    <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
+      <select id="relances-filter-annee" style="font-size:0.82rem;padding:6px 10px;border-radius:6px;border:1px solid #ccc;">
+        <option value="">Toutes les années</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+        <option value="2027">2027</option>
+      </select>
+      <select id="relances-filter-statut" style="font-size:0.82rem;padding:6px 10px;border-radius:6px;border:1px solid #ccc;">
+        <option value="">Tous les statuts</option>
+        <option value="Confirmée">Confirmée</option>
+        <option value="A relancer">A relancer</option>
+        <option value="Annulée">Annulée</option>
+        <option value="Reportée">Reportée</option>
+      </select>
+      <input type="text" id="relances-search" placeholder="Rechercher nom, prestation..." style="min-width:200px;">
+      <button class="btn" id="btn-nouvelle-relance" style="margin-left:auto;">+ Ajouter une relance</button>
+    </div>
+    <div class="data-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Nom / Organisme</th>
+            <th>Dossier lié</th>
+            <th>Prestations</th>
+            <th>Dates prévues</th>
+            <th>Contacts</th>
+            <th>Statut</th>
+            <th>Observations</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="relances-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
 </main>
 
 <!-- ===================== MODAL FICHE DOSSIER ===================== -->
@@ -411,7 +488,7 @@ h2.section-title{
 
 <!-- ===================== MODAL TARIF ===================== -->
 <div class="modal-overlay" id="modal-tarif">
-  <div class="modal-box" style="max-width:520px;">
+  <div class="modal-box" style="max-width:640px;">
     <div class="modal-header">
       <h3 id="modal-tarif-title">Nouvelle prestation</h3>
       <button class="modal-close" id="modal-tarif-close">&times;</button>
@@ -442,6 +519,17 @@ h2.section-title{
   </div>
 </div>
 
+<!-- ===================== MODAL RELANCE ===================== -->
+<div class="modal-overlay" id="modal-relance">
+  <div class="modal-box" style="max-width:580px;">
+    <div class="modal-header">
+      <h3 id="modal-relance-title">Nouvelle relance</h3>
+      <button class="modal-close" id="modal-relance-close">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-relance-body"></div>
+  </div>
+</div>
+
 <!-- ===================== DATALISTS AUTOCOMPLETION ===================== -->
 <datalist id="datalist-clients"></datalist>
 <datalist id="datalist-prestataires"></datalist>
@@ -460,7 +548,8 @@ const CONFIG = {
 /* ============================================================
    ETAT GLOBAL
    ============================================================ */
-let state = { dossiers:[], lignes:[], fraisPrestataires:[], tarifs:[], clients:[], prestataires:[] };
+let state = { dossiers:[], lignes:[], fraisPrestataires:[], prestations:[], tarifs:[], clients:[], prestataires:[], relances:[] };
+let state_anneeFiltre = String(new Date().getFullYear());
 let chartCA = null, chartStatuts = null, chartComparatifAnnuel = null;
 let currentDossierDraft = null; // {dossier, lignes, frais} en cours d'edition dans la modale
 
@@ -542,13 +631,16 @@ async function loadAll(){
     dossiers: reponse.dossiers || [],
     lignes: reponse.lignes || [],
     fraisPrestataires: reponse.fraisPrestataires || [],
-    tarifs: reponse.tarifs || [],
+    prestations: reponse.prestations || reponse.tarifs || [],
+    tarifs: reponse.prestations || reponse.tarifs || [],  // compat
     clients: reponse.clients || [],
-    prestataires: reponse.prestataires || []
+    prestataires: reponse.prestataires || [],
+    relances: reponse.relances || []
   };
   if(!("prestataires" in reponse)){
     showToast("Le script Apps Script utilisé n'est pas à jour (onglet Prestataires manquant) - redéployez la dernière version de Code.gs", true);
   }
+  majSeleteurAnnees();
   setSyncStatus("A jour", true);
   try{
     renderAll();
@@ -566,10 +658,13 @@ function setSyncStatus(text, ok, error){
 function renderAll(){
   renderDashboard();
   renderDossiersTable();
+  majFiltresCategories();
   renderCatalogueTable();
   renderClientsTable();
   renderPrestatairesTable();
+  renderRelancesTable();
   renderDatalists();
+  majSeleteurAnnees();
 }
 
 function renderDatalists(){
@@ -595,12 +690,27 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
    TABLEAU DE BORD
    ============================================================ */
 function renderDashboard(){
-  const dossiersActifs = state.dossiers.filter(d=>d.statut !== "annule");
+  const annee = state_anneeFiltre;
+  const dossiersActifs = state.dossiers.filter(d=>{
+    if(d.statut === "annule") return false;
+    if(!annee) return true;
+    const nd = String(d.numero_devis||"");
+    const dc = String(d.date_creation||"").slice(0,4);
+    return nd.includes("/"+annee) || dc === annee;
+  });
   const dossiersSimples = dossiersActifs.filter(d=>(d.type_dossier||"visite_simple")!=="forfait");
   const dossiersForfaits = dossiersActifs.filter(d=>d.type_dossier==="forfait");
 
   const caSimples = dossiersSimples.reduce((s,d)=>s + (parseFloat(d.total_ttc)||0), 0);
   const caForfaits = dossiersForfaits.reduce((s,d)=>s + (parseFloat(d.total_ttc)||0), 0);
+  const caTotal = caSimples + caForfaits;
+
+  // CA visites guidées : somme des lignes dont designation contient "visite guidée" ou "VG"
+  const idsActifs = new Set(dossiersActifs.map(d=>d.id));
+  const rgVG = /visite guid[eé]e|(?:^|\s|[+])VG(?:\s|$|[+])/i;
+  const caVG = (state.lignes||[])
+    .filter(l=>idsActifs.has(l.dossier_id) && rgVG.test(l.designation||""))
+    .reduce((s,l)=>s+(parseFloat(l.total)||0),0);
   const margeTotale = dossiersActifs.reduce((s,d)=>s + margeDossier(d.id), 0);
   const commissionForfaits = dossiersForfaits.reduce((s,d)=>s + margeDossier(d.id), 0);
   const resteAPayerTotal = dossiersActifs.reduce((s,d)=>s + resteAPayer(d), 0);
@@ -612,8 +722,9 @@ function renderDashboard(){
   const prochains = dossiersActifs.filter(d=>d.date_visite && d.date_visite >= new Date().toISOString().slice(0,10)).length;
 
   document.getElementById("kpi-grid").innerHTML = `
-    <div class="kpi-card"><div class="label">CA visites simples</div><div class="value">${euros(caSimples)}</div></div>
+    <div class="kpi-card"><div class="label">CA visites guidées</div><div class="value">${euros(caVG)}</div></div>
     <div class="kpi-card"><div class="label">CA forfaits</div><div class="value">${euros(caForfaits)}</div></div>
+    <div class="kpi-card"><div class="label">CA total</div><div class="value">${euros(caTotal)}</div></div>
     <div class="kpi-card"><div class="label">Marge totale</div><div class="value">${euros(margeTotale)}</div></div>
     <div class="kpi-card"><div class="label">Commission forfaits</div><div class="value">${euros(commissionForfaits)}</div></div>
     <div class="kpi-card"><div class="label">Participants accueillis</div><div class="value">${nbParticipantsAccueillis}</div></div>
@@ -777,6 +888,11 @@ function renderDossiersTable(){
 
   let liste = state.dossiers.filter(d=>{
     if(filtreStatut && d.statut !== filtreStatut) return false;
+    if(state_anneeFiltre){
+      const nd = String(d.numero_devis||"");
+      const dc = String(d.date_creation||"").slice(0,4);
+      if(!nd.includes("/"+state_anneeFiltre) && dc!==state_anneeFiltre) return false;
+    }
     if(!search) return true;
     const blob = [d.client_nom, d.organisme, d.lieu_visite, d.numero_devis].join(" ").toLowerCase();
     return blob.includes(search);
@@ -827,11 +943,13 @@ document.getElementById("btn-nouveau-dossier").addEventListener("click", ()=>ope
 function dupliquerDossier(id){
   const original = state.dossiers.find(d=>d.id===id);
   if(!original) return;
-  const lignes = lignesDuDossier(id).map(l=>({...l, id:undefined}));
+  const toutesLignes = lignesDuDossier(id).map(l=>({...l, id:undefined}));
+  const lignes = toutesLignes.filter(l=>!l.is_cotation||l.is_cotation==="false");
+  const cotation = toutesLignes.filter(l=>l.is_cotation===true||l.is_cotation==="true");
   const frais = fraisDuDossier(id).map(f=>({...f, id:undefined}));
   const copie = {...original, id:undefined, numero_devis:undefined, statut:"devis",
     acompte_paye:0, acompte_date:"", solde_paye:0, solde_date:""};
-  currentDossierDraft = { dossier: copie, lignes, frais };
+  currentDossierDraft = { dossier: copie, lignes, cotation, frais };
   openFicheDossierModal();
 }
 
@@ -852,11 +970,13 @@ function nouveauDossierVide(){
 function openFicheDossier(id){
   if(id){
     const dossier = state.dossiers.find(d=>d.id===id);
-    const lignes = lignesDuDossier(id).map(l=>({...l}));
+    const toutesLignes = lignesDuDossier(id).map(l=>({...l}));
+    const lignes = toutesLignes.filter(l=>!l.is_cotation||l.is_cotation==="false");
+    const cotation = toutesLignes.filter(l=>l.is_cotation===true||l.is_cotation==="true");
     const frais = fraisDuDossier(id).map(f=>({...f}));
-    currentDossierDraft = { dossier: {...dossier}, lignes, frais };
+    currentDossierDraft = { dossier: {...dossier}, lignes, cotation, frais };
   } else {
-    currentDossierDraft = { dossier: nouveauDossierVide(), lignes:[], frais:[] };
+    currentDossierDraft = { dossier: nouveauDossierVide(), lignes:[], cotation:[], frais:[] };
   }
   openFicheDossierModal();
 }
@@ -918,7 +1038,7 @@ function ficheDossierHTML(){
       <div class="toolbar" style="margin-bottom:10px;">
         <select id="f-catalogue-select" style="flex:1;min-width:240px;">
           <option value="">+ Ajouter une prestation depuis le catalogue...</option>
-          ${state.tarifs.map(t=>`<option value="${t.id}">${t.designation} (${euros(t.prix)})</option>`).join("")}
+          ${state.prestations.map(t=>`<option value="${t.id}">${t.designation} (${euros(t.prix)})</option>`).join("")}
         </select>
         <button class="btn small" id="f-btn-ajouter-ligne-libre">+ Ligne libre</button>
       </div>
@@ -936,6 +1056,25 @@ function ficheDossierHTML(){
           <tr class="total"><td class="label">TOTAL TTC</td><td class="value" id="f-display-total">0,00 €</td></tr>
         </table>
       </div>
+    </div>
+
+    <div class="subsection">
+      <h4>Tableau de cotation</h4>
+      <p style="font-size:0.78rem;opacity:0.7;margin-top:-4px;">Ventilation détaillée du coût du séjour - utilisée pour calculer le prix par personne et affichée dans le devis et le contrat.</p>
+      <div style="overflow-x:auto;">
+        <table class="cotation-editor-table">
+          <colgroup><col style="width:44%"><col style="width:16%"><col style="width:17%"><col style="width:16%"><col style="width:7%"></colgroup>
+          <thead><tr>
+            <th>Prestations</th>
+            <th>Frais indiv. /pers.</th>
+            <th>Frais collectifs (total)</th>
+            <th>Suppl. ch. indiv.</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="cotation-tbody"></tbody>
+        </table>
+      </div>
+      <div class="cotation-totaux-box" id="cotation-totaux-box"></div>
     </div>
 
     <div class="subsection">
@@ -993,6 +1132,102 @@ function ficheDossierHTML(){
       </div>
     </div>
   `;
+}
+
+/* ============================================================
+   TABLEAU DE COTATION
+   ============================================================ */
+const COTATION_CATEGORIES = ["Restauration","Hébergement","Visites","Autres"];
+
+function renderCotationEditor(){
+  const cotation = currentDossierDraft.cotation || [];
+  const tbody = document.getElementById("cotation-tbody");
+  if(!tbody) return;
+  let html = "";
+  COTATION_CATEGORIES.forEach(cat => {
+    const rows = cotation.filter(l=>l.categorie_cotation===cat);
+    html += `<tr class="cat-row"><td colspan="5">
+      ${cat}
+      <button type="button" class="cat-add-btn" data-cat="${cat}">+ Ajouter</button>
+    </td></tr>`;
+    rows.forEach((l,i) => {
+      const idx = cotation.indexOf(l);
+      html += `<tr class="data-row">
+        <td><input type="text" class="cot-desig" data-idx="${idx}" value="${l.designation||""}" placeholder="Nom de la prestation..."></td>
+        <td><input type="number" class="cot-indiv" data-idx="${idx}" step="0.01" min="0" value="${l.frais_indiv||""}" placeholder="0"></td>
+        <td><input type="number" class="cot-collectif" data-idx="${idx}" step="0.01" min="0" value="${l.frais_collectif||""}" placeholder="0"></td>
+        <td><input type="number" class="cot-suppl" data-idx="${idx}" step="0.01" min="0" value="${l.suppl_chambre||""}" placeholder="0"></td>
+        <td><button type="button" class="del-btn" data-idx="${idx}">✕</button></td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML = html;
+
+  // Boutons "Ajouter une ligne"
+  tbody.querySelectorAll(".cat-add-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      (currentDossierDraft.cotation = currentDossierDraft.cotation||[]).push({
+        id:null, categorie_cotation:btn.dataset.cat, designation:"", frais_indiv:0, frais_collectif:0, suppl_chambre:0
+      });
+      renderCotationEditor();
+      recalcCotation();
+    });
+  });
+
+  // Boutons supprimer
+  tbody.querySelectorAll(".del-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentDossierDraft.cotation.splice(parseInt(btn.dataset.idx),1);
+      renderCotationEditor();
+      recalcCotation();
+    });
+  });
+
+  // Champs désignation
+  tbody.querySelectorAll(".cot-desig").forEach(inp => {
+    inp.addEventListener("input", () => {
+      currentDossierDraft.cotation[parseInt(inp.dataset.idx)].designation = inp.value;
+    });
+  });
+
+  // Champs numériques
+  tbody.querySelectorAll(".cot-indiv,.cot-collectif,.cot-suppl").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const l = currentDossierDraft.cotation[parseInt(inp.dataset.idx)];
+      if(inp.classList.contains("cot-indiv")) l.frais_indiv = parseFloat(inp.value)||0;
+      else if(inp.classList.contains("cot-collectif")) l.frais_collectif = parseFloat(inp.value)||0;
+      else l.suppl_chambre = parseFloat(inp.value)||0;
+      recalcCotation();
+    });
+  });
+
+  recalcCotation();
+}
+
+function recalcCotation(){
+  const cotation = currentDossierDraft.cotation || [];
+  const totalIndiv = cotation.reduce((s,l)=>s+(parseFloat(l.frais_indiv)||0),0);
+  const totalCollectif = cotation.reduce((s,l)=>s+(parseFloat(l.frais_collectif)||0),0);
+  const nbAdultes = parseInt(document.getElementById("f-nb_adultes")?.value)||0;
+  const nbEnfants = parseInt(document.getElementById("f-nb_enfants")?.value)||0;
+  const nbPax = nbAdultes + nbEnfants;
+  const repartCollectif = nbPax > 0 ? totalCollectif/nbPax : 0;
+  const prixParPers = totalIndiv + repartCollectif;
+  const prixTotal = prixParPers * nbPax;
+
+  const box = document.getElementById("cotation-totaux-box");
+  if(!box) return;
+  if(cotation.length === 0){
+    box.innerHTML = "";
+    return;
+  }
+  box.innerHTML = `<table>
+    <tr><td>Frais individuels totaux</td><td>${euros(totalIndiv)} / pers.</td></tr>
+    <tr><td>Frais collectifs totaux</td><td>${euros(totalCollectif)} (groupe)</td></tr>
+    <tr><td>Répartition collectifs (${nbPax} pers.)</td><td>${euros(repartCollectif)} / pers.</td></tr>
+    <tr class="total-row"><td>Prix de vente par personne</td><td>${euros(prixParPers)}</td></tr>
+    <tr class="total-row"><td>Prix de vente total (${nbPax} pers.)</td><td>${euros(prixTotal)}</td></tr>
+  </table>`;
 }
 
 function estPrestataireOT(nom){
@@ -1112,6 +1347,7 @@ function renderFraisTable(){
 
 function wireFicheDossierEvents(){
   renderLignesTable();
+  renderCotationEditor();
 
   document.getElementById("f-client_nom").addEventListener("input", (e)=>{
     const match = state.clients.find(c=>(c.nom||"").trim().toLowerCase() === e.target.value.trim().toLowerCase());
@@ -1125,7 +1361,7 @@ function wireFicheDossierEvents(){
   });
 
   document.getElementById("f-catalogue-select").addEventListener("change", (e)=>{
-    const tarif = state.tarifs.find(t=>t.id===e.target.value);
+    const tarif = state.prestations.find(t=>t.id===e.target.value);
     if(!tarif) return;
     let qte = 1;
     if(tarif.unite === "personne"){
@@ -1189,6 +1425,9 @@ function wireFicheDossierEvents(){
   ["f-remise","f-frais_dossier","f-acompte_paye","f-solde_paye","f-nb_adultes","f-nb_enfants"].forEach(id=>{
     document.getElementById(id).addEventListener("input", recalculerTotaux);
   });
+  ["f-nb_adultes","f-nb_enfants"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", recalcCotation);
+  });
 
   document.getElementById("f-btn-annuler").addEventListener("click", ()=>{
     document.getElementById("modal-dossier").classList.remove("open");
@@ -1243,7 +1482,8 @@ async function enregistrerDossier(){
   btn.textContent = "Enregistrement...";
   lireFormulaireDossier();
   try{
-    const payload = { action:"saveDossier", dossier:currentDossierDraft.dossier, lignes:currentDossierDraft.lignes, frais:currentDossierDraft.frais };
+    const cotationPourSave = (currentDossierDraft.cotation||[]).map((c,i)=>({...c, is_cotation:true, ordre:10000+i}));
+    const payload = { action:"saveDossier", dossier:currentDossierDraft.dossier, lignes:[...currentDossierDraft.lignes, ...cotationPourSave], frais:currentDossierDraft.frais };
     const res = await apiPost(payload);
     currentDossierDraft.dossier.id = res.id;
     currentDossierDraft.dossier.numero_devis = res.numero_devis;
@@ -1300,18 +1540,78 @@ function imprimerDocument(type){
   recalculerTotaux();
   const d = currentDossierDraft.dossier;
   const lignes = currentDossierDraft.lignes;
+  const cotation = currentDossierDraft.cotation || [];
   let html = "";
-  if(type==="devis") html = htmlDevis(d, lignes);
+  if(type==="devis") html = htmlDevis(d, lignes, cotation);
   if(type==="bon_echange") html = htmlBonsEchange(d, lignes);
-  if(type==="contrat") html = htmlContrat(d, lignes);
-  if(type==="contrat_sans_prix") html = htmlContratSansPrix(d, lignes);
+  if(type==="contrat") html = htmlContrat(d, lignes, cotation);
+  if(type==="contrat_sans_prix") html = htmlContratSansPrix(d, lignes, cotation);
   document.getElementById("print-area").innerHTML = html;
   setTimeout(()=>window.print(), 150);
 }
 
-function htmlDevis(d, lignes){
+/* Génère le bloc HTML du tableau de cotation pour les documents imprimés */
+function htmlTableauCotationDoc(cotation, nbPax, avecPrix){
+  if(!cotation || cotation.length===0) return "";
+  const cats = COTATION_CATEGORIES.filter(c=>cotation.some(l=>l.categorie_cotation===c));
+  if(cats.length===0) return "";
+
+  let totalIndiv = 0, totalCollectif = 0;
+  let sectionsHtml = cats.map(cat=>{
+    const rows = cotation.filter(l=>l.categorie_cotation===cat);
+    const rowsHtml = rows.map(l=>{
+      totalIndiv += parseFloat(l.frais_indiv)||0;
+      totalCollectif += parseFloat(l.frais_collectif)||0;
+      if(avecPrix){
+        return `<tr>
+          <td>${l.designation||""}</td>
+          <td class="num">${(parseFloat(l.frais_indiv)||0)>0 ? euros(l.frais_indiv) : "-"}</td>
+          <td class="num">${(parseFloat(l.frais_collectif)||0)>0 ? euros(l.frais_collectif) : "-"}</td>
+          <td class="num">${(parseFloat(l.suppl_chambre)||0)>0 ? euros(l.suppl_chambre) : "-"}</td>
+        </tr>`;
+      } else {
+        return `<tr><td>${l.designation||""}</td><td></td><td></td><td></td></tr>`;
+      }
+    }).join("");
+    return `<tr><td colspan="4" style="background:var(--vert-pale);font-family:var(--font-sub);text-transform:uppercase;font-size:0.72rem;letter-spacing:0.5px;color:var(--vert-foret);padding:5px 8px;font-weight:700;">${cat}</td></tr>${rowsHtml}`;
+  }).join("");
+
+  const repartCollectif = nbPax > 0 ? totalCollectif/nbPax : 0;
+  const prixParPers = totalIndiv + repartCollectif;
+  const prixTotal = prixParPers * nbPax;
+
+  const totauxHtml = avecPrix ? `
+    <table class="doc-cotation-totaux">
+      <tr><td>Frais individuels</td><td>${euros(totalIndiv)} / pers.</td></tr>
+      <tr><td>Frais collectifs (groupe)</td><td>${euros(totalCollectif)}</td></tr>
+      ${nbPax>0?`<tr><td>Répartition collectifs (${nbPax} pers.)</td><td>${euros(repartCollectif)} / pers.</td></tr>`:""}
+      <tr class="total-final"><td>Prix de vente par personne</td><td>${euros(prixParPers)}</td></tr>
+      ${nbPax>0?`<tr class="total-final"><td>Prix de vente total (${nbPax} pers.)</td><td>${euros(prixTotal)}</td></tr>`:""}
+    </table>` : "";
+
+  return `<div class="doc-cotation-section">
+    <table class="doc-cotation-table">
+      <thead><tr>
+        <th>Prestations</th>
+        <th class="num">${avecPrix?"Frais indiv. /pers.":""}</th>
+        <th class="num">${avecPrix?"Frais collectifs (total)":""}</th>
+        <th class="num">${avecPrix?"Suppl. ch. indiv.":""}</th>
+      </tr></thead>
+      <tbody>${sectionsHtml}</tbody>
+    </table>
+    ${totauxHtml}
+  </div>`;
+}
+
+function htmlDevis(d, lignes, cotation){
   const sousTotal = lignes.reduce((s,l)=>s+(l.total||0),0);
   const totalTTC = sousTotal - (parseFloat(d.remise)||0) + (parseFloat(d.frais_dossier_montant)||0);
+  const nbPax = (parseInt(d.nb_adultes)||0)+(parseInt(d.nb_enfants)||0);
+  const blocCotation = (cotation&&cotation.length>0) ? htmlTableauCotationDoc(cotation, nbPax, true) : "";
+  const blocLignes = lignes.length>0 ? `<table class="doc-lines-table">
+      <thead><tr><th>Description</th><th>Prix unitaire</th><th>Quantité</th><th>Total</th></tr></thead>
+      <tbody>${lignes.map(l=>`<tr><td>${l.designation||""}</td><td>${euros(l.prix_unitaire)}</td><td>${l.quantite}</td><td>${euros(l.total)}</td></tr>`).join("")}</tbody>
+    </table>` : "";
   return `
   <div class="doc-page">
     ${entetePrestataire()}
@@ -1323,12 +1623,8 @@ function htmlDevis(d, lignes){
       <tr><td class="k">Date de la visite</td><td>${dateFR(d.date_visite)}</td></tr>
       <tr><td class="k">Participants</td><td>${d.nb_adultes||0} adultes, ${d.nb_enfants||0} enfants, ${d.nb_accompagnateurs||0} accompagnateur(s), ${d.nb_gratuites||0} gratuité(s)</td></tr>
     </table>
-    <table class="doc-lines-table">
-      <thead><tr><th>Description</th><th>Prix unitaire</th><th>Quantité</th><th>Total</th></tr></thead>
-      <tbody>
-        ${lignes.map(l=>`<tr><td>${l.designation||""}</td><td>${euros(l.prix_unitaire)}</td><td>${l.quantite}</td><td>${euros(l.total)}</td></tr>`).join("")}
-      </tbody>
-    </table>
+    ${blocCotation}
+    ${blocLignes}
     <table class="doc-meta-table" style="width:340px;margin-left:auto;">
       <tr><td class="k">Sous-total</td><td>${euros(sousTotal)}</td></tr>
       <tr><td class="k">Remise</td><td>${euros(d.remise)}</td></tr>
@@ -1386,9 +1682,15 @@ function htmlUnBonEchange(d, lignes, nomPrestataire){
   </div>`;
 }
 
-function htmlContrat(d, lignes){
+function htmlContrat(d, lignes, cotation){
   const sousTotal = lignes.reduce((s,l)=>s+(l.total||0),0);
   const totalTTC = sousTotal - (parseFloat(d.remise)||0) + (parseFloat(d.frais_dossier_montant)||0);
+  const nbPax = (parseInt(d.nb_adultes)||0)+(parseInt(d.nb_enfants)||0);
+  const blocCotation = (cotation&&cotation.length>0) ? htmlTableauCotationDoc(cotation, nbPax, true) : "";
+  const blocLignes = lignes.length>0 ? `<table class="doc-lines-table">
+      <thead><tr><th>Prestations</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+      <tbody>${lignes.map(l=>`<tr><td>${l.designation||""}</td><td>${l.quantite}</td><td>${euros(l.prix_unitaire)}</td><td>${euros(l.total)}</td></tr>`).join("")}</tbody>
+    </table>` : "";
   return `
   <div class="doc-page">
     ${entetePrestataire()}
@@ -1400,12 +1702,8 @@ function htmlContrat(d, lignes){
       <tr><td class="k">Lieu et date de la visite</td><td>${d.lieu_visite||""} - ${dateFR(d.date_visite)}</td></tr>
       <tr><td class="k">Participants</td><td>${d.nb_adultes||0} adultes, ${d.nb_enfants||0} enfants, ${d.nb_accompagnateurs||0} accompagnateur(s)</td></tr>
     </table>
-    <table class="doc-lines-table">
-      <thead><tr><th>Prestations</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead>
-      <tbody>
-        ${lignes.map(l=>`<tr><td>${l.designation||""}</td><td>${l.quantite}</td><td>${euros(l.prix_unitaire)}</td><td>${euros(l.total)}</td></tr>`).join("")}
-      </tbody>
-    </table>
+    ${blocCotation}
+    ${blocLignes}
     <table class="doc-meta-table" style="width:340px;margin-left:auto;">
       <tr><td class="k">TOTAL TTC</td><td><strong>${euros(totalTTC)}</strong></td></tr>
       <tr><td class="k">1er acompte (30%)</td><td>${euros(d.acompte_attendu)}</td></tr>
@@ -1421,7 +1719,7 @@ function htmlContrat(d, lignes){
   </div>`;
 }
 
-function htmlContratSansPrix(d, lignes){
+function htmlContratSansPrix(d, lignes, cotation){
   const totalTTC = (parseFloat(d.total_ttc)||0);
   const acompte1 = (parseFloat(d.acompte_attendu)||0);
   const solde = totalTTC - acompte1;
@@ -1501,6 +1799,8 @@ function htmlContratSansPrix(d, lignes){
       <div>&#9744; Nuit + petit-déjeuner &nbsp;&nbsp;&nbsp;&nbsp; &#9744; Nuit sans petit-déjeuner &nbsp;&nbsp;&nbsp;&nbsp; &#9744; Nuit + Pension complète</div>
       <div>&#9744; Nuit + Demi-pension &nbsp;&nbsp;&nbsp;&nbsp; &#9744; Sans hébergement</div>
     </div>
+    <!-- TABLEAU DE COTATION (sans prix) -->
+    ${htmlTableauCotationDoc(cotation||[], 0, false)}
     <!-- SITES DE VISITE -->
     <div style="font-weight:bold;text-transform:uppercase;color:#4B6239;margin-bottom:6px;">Sites de visite</div>
     <div style="margin-bottom:10px;color:#4B6239;">
@@ -1576,35 +1876,63 @@ function htmlContratSansPrix(d, lignes){
 /* ============================================================
    CATALOGUE TARIFAIRE
    ============================================================ */
+let _filtreCategorieActive = "";
+
+function majFiltresCategories(){
+  const cats = Array.from(new Set((state.prestations||[]).map(t=>t.categorie||"").filter(Boolean))).sort();
+  const div = document.getElementById("filtre-categories");
+  if(!div) return;
+  div.innerHTML = `<button class="btn small ${_filtreCategorieActive===""?"":"ghost"}" data-cat="">Toutes</button>` +
+    cats.map(c=>`<button class="btn small ${_filtreCategorieActive===c?"":"ghost"}" data-cat="${c.replace(/"/g,"&quot;")}">${c}</button>`).join("");
+  div.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    _filtreCategorieActive = b.dataset.cat;
+    majFiltresCategories();
+    renderCatalogueTable();
+  }));
+}
+
 function renderCatalogueTable(){
   const search = (document.getElementById("catalogue-search").value||"").toLowerCase();
-  const liste = state.tarifs.filter(t=> !search || (t.designation||"").toLowerCase().includes(search))
-    .sort((a,b)=>(a.categorie||"").localeCompare(b.categorie||"") || (a.designation||"").localeCompare(b.designation||""));
+  const liste = (state.prestations||[]).filter(t=>{
+    if(_filtreCategorieActive && t.categorie!==_filtreCategorieActive) return false;
+    if(!search) return true;
+    return (t.designation||"").toLowerCase().includes(search)
+      || (t.categorie||"").toLowerCase().includes(search)
+      || (t.prestataire_nom||t.prestataire_defaut||"").toLowerCase().includes(search);
+  }).sort((a,b)=>(a.categorie||"").localeCompare(b.categorie||"") || (a.designation||"").localeCompare(b.designation||""));
   const tbody = document.getElementById("catalogue-tbody");
   if(liste.length===0){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">Aucune prestation trouvée.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="10">Aucune prestation trouvée.</td></tr>`;
     return;
   }
-  tbody.innerHTML = liste.map(t=>`
+  tbody.innerHTML = liste.map(t=>{
+    const pa = parseFloat(t.prix_achat);
+    const pv = parseFloat(t.prix);
+    const marge = (!isNaN(pa) && !isNaN(pv) && pv>0 && t.prix_achat!=="") ? Math.round((pv-pa)/pv*100) : null;
+    const margeHtml = marge!==null ? `<span style="color:${marge>=0?"#4B6239":"#D88050"};font-weight:600;">${marge}%</span>` : `<span style="opacity:0.4;">-</span>`;
+    const prestNom = t.prestataire_nom || t.prestataire_defaut || "";
+    return `
     <tr data-id="${t.id}">
       <td>${t.designation||""}</td>
       <td>${t.categorie||""}</td>
       <td>${euros(t.prix)}</td>
+      <td>${t.prix_achat!==undefined && t.prix_achat!=="" ? euros(t.prix_achat) : "<span style='opacity:0.4;'>-</span>"}</td>
+      <td>${margeHtml}</td>
       <td>${t.unite||""}</td>
       <td>${t.seuil||""}</td>
-      <td>${t.prestataire_defaut||"<span style='opacity:0.5;'>Office de Tourisme</span>"}</td>
+      <td style="font-size:0.8rem;">${prestNom||"<span style='opacity:0.4;'>OT</span>"}</td>
       <td style="opacity:0.7;font-size:0.8rem;">${t.notes||""}</td>
       <td>
         <button class="btn small ghost t-editer">Modifier</button>
         <button class="btn small danger t-supprimer">×</button>
       </td>
-    </tr>
-  `).join("");
+    </tr>`;
+  }).join("");
   tbody.querySelectorAll(".t-editer").forEach(b=>b.addEventListener("click", (e)=>openModalTarif(e.target.closest("tr").dataset.id)));
   tbody.querySelectorAll(".t-supprimer").forEach(b=>b.addEventListener("click", async (e)=>{
     if(!confirm("Supprimer cette prestation du catalogue ?")) return;
     try{
-      await apiPost({action:"deleteTarif", id:e.target.closest("tr").dataset.id});
+      await apiPost({action:"deletePrestation", id:e.target.closest("tr").dataset.id});
       showToast("Prestation supprimée");
       await loadAll();
     }catch(err){ showToast("Erreur : " + err.message, true); }
@@ -1614,12 +1942,18 @@ document.getElementById("catalogue-search").addEventListener("input", renderCata
 document.getElementById("btn-nouveau-tarif").addEventListener("click", ()=>openModalTarif(null));
 
 function openModalTarif(id){
-  const t = id ? state.tarifs.find(x=>x.id===id) : {id:null, designation:"", prix:0, categorie:"", unite:"forfait", seuil:"", prestataire_defaut:"", notes:""};
+  const t = id ? (state.prestations||[]).find(x=>x.id===id) : {id:null, designation:"", prix:0, categorie:"", unite:"forfait", seuil:"", prestataire_defaut:"", notes:"", prix_achat:"", marge_estimee:"", type_prestation:"", prestataire_nom:"", prestataire_tel:"", prestataire_email:""};
+  if(!t) return;
+  const pv = parseFloat(t.prix)||0;
+  const pa = parseFloat(t.prix_achat);
+  const margeCalc = (!isNaN(pa) && pv>0 && t.prix_achat!=="") ? Math.round((pv-pa)/pv*100) : "";
   document.getElementById("modal-tarif-title").textContent = id ? "Modifier la prestation" : "Nouvelle prestation";
   document.getElementById("modal-tarif-body").innerHTML = `
     <div class="form-field" style="margin-bottom:12px;"><label>Désignation</label><input type="text" id="t-designation" value="${(t.designation||"").replace(/"/g,"&quot;")}"></div>
     <div class="form-grid">
-      <div class="form-field"><label>Prix (€)</label><input type="number" step="0.01" id="t-prix" value="${t.prix||0}"></div>
+      <div class="form-field"><label>Prix de vente (€)</label><input type="number" step="0.01" id="t-prix" value="${t.prix||0}"></div>
+      <div class="form-field"><label>Prix d'achat (€)</label><input type="number" step="0.01" id="t-prix_achat" value="${t.prix_achat||""}" placeholder="Optionnel"></div>
+      <div class="form-field"><label>Marge estimée (%)</label><input type="number" step="1" id="t-marge_estimee" value="${t.marge_estimee||margeCalc}" placeholder="Calculée auto"></div>
       <div class="form-field"><label>Catégorie</label><input type="text" id="t-categorie" value="${t.categorie||""}"></div>
       <div class="form-field"><label>Unité</label>
         <select id="t-unite">
@@ -1629,29 +1963,52 @@ function openModalTarif(id){
       </div>
       <div class="form-field"><label>Seuil pax (si palier)</label><input type="text" id="t-seuil" value="${t.seuil||""}"></div>
     </div>
-    <div class="form-field" style="margin-bottom:12px;"><label>Prestataire par défaut</label><input type="text" id="t-prestataire_defaut" list="datalist-prestataires" value="${(t.prestataire_defaut||"").replace(/"/g,"&quot;")}" placeholder="Laissez vide si réalisé par l'Office de Tourisme"></div>
-    <div class="form-field" style="margin-bottom:12px;"><label>Notes</label><textarea id="t-notes">${t.notes||""}</textarea></div>
+    <hr style="margin:14px 0;opacity:0.3;">
+    <p style="font-family:var(--font-sub);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.5px;color:#5D7E8E;margin:0 0 10px;">Prestataire associé</p>
+    <div class="form-grid">
+      <div class="form-field"><label>Nom prestataire</label><input type="text" id="t-prestataire_nom" list="datalist-prestataires" value="${(t.prestataire_nom||t.prestataire_defaut||"").replace(/"/g,"&quot;")}"></div>
+      <div class="form-field"><label>Téléphone</label><input type="text" id="t-prestataire_tel" value="${t.prestataire_tel||""}"></div>
+      <div class="form-field" style="grid-column:span 2;"><label>Email</label><input type="email" id="t-prestataire_email" value="${t.prestataire_email||""}"></div>
+    </div>
+    <div class="form-field" style="margin:12px 0;"><label>Notes</label><textarea id="t-notes">${t.notes||""}</textarea></div>
     <div class="toolbar" style="justify-content:flex-end;">
       <button class="btn ghost" id="t-btn-annuler">Annuler</button>
       <button class="btn" id="t-btn-enregistrer">Enregistrer</button>
     </div>
   `;
+  // Calcul auto marge
+  function recalcMarge(){
+    const prixV = parseFloat(document.getElementById("t-prix").value)||0;
+    const prixA = parseFloat(document.getElementById("t-prix_achat").value);
+    if(!isNaN(prixA) && prixV>0){
+      const m = Math.round((prixV-prixA)/prixV*100);
+      document.getElementById("t-marge_estimee").value = m;
+    }
+  }
+  document.getElementById("t-prix").addEventListener("input", recalcMarge);
+  document.getElementById("t-prix_achat").addEventListener("input", recalcMarge);
   document.getElementById("t-btn-annuler").addEventListener("click", ()=>document.getElementById("modal-tarif").classList.remove("open"));
   document.getElementById("t-btn-enregistrer").addEventListener("click", async (e)=>{
     if(e.currentTarget.disabled) return;
     e.currentTarget.disabled = true;
-    const tarif = {
+    const nomPrest = document.getElementById("t-prestataire_nom").value;
+    const prestation = {
       id: t.id,
       designation: document.getElementById("t-designation").value,
       prix: parseFloat(document.getElementById("t-prix").value)||0,
+      prix_achat: document.getElementById("t-prix_achat").value,
+      marge_estimee: document.getElementById("t-marge_estimee").value,
       categorie: document.getElementById("t-categorie").value,
       unite: document.getElementById("t-unite").value,
       seuil: document.getElementById("t-seuil").value,
-      prestataire_defaut: document.getElementById("t-prestataire_defaut").value,
+      prestataire_defaut: nomPrest,
+      prestataire_nom: nomPrest,
+      prestataire_tel: document.getElementById("t-prestataire_tel").value,
+      prestataire_email: document.getElementById("t-prestataire_email").value,
       notes: document.getElementById("t-notes").value
     };
     try{
-      await apiPost({action:"saveTarif", tarif});
+      await apiPost({action:"savePrestation", prestation});
       showToast("Prestation enregistrée");
       document.getElementById("modal-tarif").classList.remove("open");
       await loadAll();
@@ -1856,6 +2213,178 @@ function openModalPrestataire(id){
   document.getElementById("modal-prestataire").classList.add("open");
 }
 document.getElementById("modal-prestataire-close").addEventListener("click", ()=>document.getElementById("modal-prestataire").classList.remove("open"));
+
+/* ============================================================
+   FILTRE PAR ANNEE (Mod 4)
+   ============================================================ */
+function majSeleteurAnnees(){
+  const sel = document.getElementById("annee-filtre");
+  if(!sel) return;
+  const anneesFromDossiers = new Set(
+    (state.dossiers||[]).map(d=>{
+      const nd = String(d.numero_devis||"");
+      const m = nd.match(/\/(\d{4})$/);
+      if(m) return m[1];
+      return String(d.date_creation||"").slice(0,4);
+    }).filter(a=>a && a.length===4)
+  );
+  const anneeCourrante = String(new Date().getFullYear());
+  anneesFromDossiers.add(anneeCourrante);
+  const annees = Array.from(anneesFromDossiers).sort();
+  const courant = sel.value || state_anneeFiltre;
+  sel.innerHTML = `<option value="">Toutes</option>` + annees.map(a=>`<option value="${a}" ${a===courant?"selected":""}>${a}</option>`).join("");
+}
+
+document.getElementById("annee-filtre").addEventListener("change", function(){
+  state_anneeFiltre = this.value;
+  renderDashboard();
+  renderDossiersTable();
+});
+
+document.getElementById("btn-nouvelle-annee").addEventListener("click", ()=>{
+  const a = prompt("Ajouter une année :");
+  if(!a || !/^\d{4}$/.test(a.trim())) return;
+  const sel = document.getElementById("annee-filtre");
+  const exists = Array.from(sel.options).some(o=>o.value===a.trim());
+  if(!exists){
+    const opt = document.createElement("option");
+    opt.value = a.trim(); opt.textContent = a.trim();
+    sel.appendChild(opt);
+  }
+  sel.value = a.trim();
+  state_anneeFiltre = a.trim();
+  renderDashboard();
+  renderDossiersTable();
+});
+
+/* ============================================================
+   RELANCES GROUPES (Mod 6)
+   ============================================================ */
+const STATUT_RELANCE_COLORS = {
+  "Confirmée": "#4B6239",
+  "A relancer": "#D88050",
+  "Annulée": "#575756",
+  "Reportée": "#5D7E8E"
+};
+
+function renderRelancesTable(){
+  const annee = document.getElementById("relances-filter-annee").value;
+  const statut = document.getElementById("relances-filter-statut").value;
+  const search = (document.getElementById("relances-search").value||"").toLowerCase();
+  const liste = (state.relances||[]).filter(r=>{
+    if(annee && r.annee && r.annee!==annee) return false;
+    if(statut && r.statut!==statut) return false;
+    if(search){
+      const hay = [(r.nom||""),(r.prestations||""),(r.contacts||""),(r.observations||"")].join(" ").toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  const tbody = document.getElementById("relances-tbody");
+  if(!tbody) return;
+  if(liste.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">Aucune relance trouvée.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = liste.map(r=>{
+    const color = STATUT_RELANCE_COLORS[r.statut]||"#575756";
+    const dossierLien = r.numero_dossier
+      ? `<a href="#" style="color:#5D7E8E;text-decoration:underline;" onclick="event.preventDefault();openDossierByNumero('${r.numero_dossier.replace(/'/g,"\\'")}')">${r.numero_dossier}</a>`
+      : `<span style="opacity:0.4;">-</span>`;
+    return `<tr data-id="${r.id}">
+      <td style="font-weight:600;">${r.nom||""}</td>
+      <td>${dossierLien}</td>
+      <td style="font-size:0.82rem;">${r.prestations||""}</td>
+      <td style="font-size:0.82rem;white-space:nowrap;">${r.dates_prevues||""}</td>
+      <td style="font-size:0.78rem;opacity:0.85;">${(r.contacts||"").replace(/\n/g,"<br>")}</td>
+      <td><span style="background:${color};color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;white-space:nowrap;">${r.statut||""}</span></td>
+      <td style="font-size:0.8rem;opacity:0.85;">${r.observations||""}</td>
+      <td>
+        <button class="btn small ghost r-editer">Modifier</button>
+        <button class="btn small danger r-supprimer">×</button>
+      </td>
+    </tr>`;
+  }).join("");
+  tbody.querySelectorAll(".r-editer").forEach(b=>b.addEventListener("click",(e)=>openModalRelance(e.target.closest("tr").dataset.id)));
+  tbody.querySelectorAll(".r-supprimer").forEach(b=>b.addEventListener("click", async (e)=>{
+    if(!confirm("Supprimer cette relance ?")) return;
+    try{
+      await apiPost({action:"deleteRelance", id:e.target.closest("tr").dataset.id});
+      showToast("Relance supprimée");
+      await loadAll();
+    }catch(err){ showToast("Erreur : " + err.message, true); }
+  }));
+}
+
+function openDossierByNumero(numero){
+  const d = state.dossiers.find(x=>x.numero_devis===numero);
+  if(d) openModalDossier(d.id);
+  else showToast("Dossier " + numero + " introuvable", true);
+}
+
+document.getElementById("relances-filter-annee").addEventListener("change", renderRelancesTable);
+document.getElementById("relances-filter-statut").addEventListener("change", renderRelancesTable);
+document.getElementById("relances-search").addEventListener("input", renderRelancesTable);
+document.getElementById("btn-nouvelle-relance").addEventListener("click", ()=>openModalRelance(null));
+document.getElementById("modal-relance-close").addEventListener("click", ()=>document.getElementById("modal-relance").classList.remove("open"));
+
+function openModalRelance(id){
+  const r = id ? (state.relances||[]).find(x=>x.id===id) : {id:null, annee:String(new Date().getFullYear()), nom:"", source_info:"", numero_dossier:"", prestations:"", dates_prevues:"", contacts:"", statut:"A relancer", dates_relances:"", observations:""};
+  if(!r) return;
+  document.getElementById("modal-relance-title").textContent = id ? "Modifier la relance" : "Nouvelle relance";
+  document.getElementById("modal-relance-body").innerHTML = `
+    <div class="form-grid">
+      <div class="form-field"><label>Nom / Organisme</label><input type="text" id="r-nom" value="${(r.nom||"").replace(/"/g,"&quot;")}"></div>
+      <div class="form-field"><label>Année</label><input type="text" id="r-annee" value="${r.annee||new Date().getFullYear()}"></div>
+      <div class="form-field"><label>N° dossier lié</label><input type="text" id="r-numero_dossier" value="${r.numero_dossier||""}" placeholder="Ex: 2026/05"></div>
+      <div class="form-field"><label>Statut</label>
+        <select id="r-statut">
+          <option value="Confirmée" ${r.statut==="Confirmée"?"selected":""}>Confirmée</option>
+          <option value="A relancer" ${r.statut==="A relancer"?"selected":""}>A relancer</option>
+          <option value="Annulée" ${r.statut==="Annulée"?"selected":""}>Annulée</option>
+          <option value="Reportée" ${r.statut==="Reportée"?"selected":""}>Reportée</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-field" style="margin:10px 0;"><label>Prestations</label><input type="text" id="r-prestations" value="${(r.prestations||"").replace(/"/g,"&quot;")}"></div>
+    <div class="form-grid">
+      <div class="form-field"><label>Dates prévues</label><input type="text" id="r-dates_prevues" value="${r.dates_prevues||""}"></div>
+      <div class="form-field"><label>Dates de relances</label><input type="text" id="r-dates_relances" value="${r.dates_relances||""}"></div>
+    </div>
+    <div class="form-field" style="margin:10px 0;"><label>Contacts</label><textarea id="r-contacts">${r.contacts||""}</textarea></div>
+    <div class="form-field" style="margin-bottom:12px;"><label>Observations</label><textarea id="r-observations">${r.observations||""}</textarea></div>
+    <div class="form-field" style="margin-bottom:12px;"><label>Source / Info</label><input type="text" id="r-source_info" value="${r.source_info||""}"></div>
+    <div class="toolbar" style="justify-content:flex-end;">
+      <button class="btn ghost" id="r-btn-annuler">Annuler</button>
+      <button class="btn" id="r-btn-enregistrer">Enregistrer</button>
+    </div>
+  `;
+  document.getElementById("r-btn-annuler").addEventListener("click", ()=>document.getElementById("modal-relance").classList.remove("open"));
+  document.getElementById("r-btn-enregistrer").addEventListener("click", async (e)=>{
+    if(e.currentTarget.disabled) return;
+    e.currentTarget.disabled = true;
+    const relance = {
+      id: r.id,
+      annee: document.getElementById("r-annee").value,
+      nom: document.getElementById("r-nom").value,
+      source_info: document.getElementById("r-source_info").value,
+      numero_dossier: document.getElementById("r-numero_dossier").value,
+      prestations: document.getElementById("r-prestations").value,
+      dates_prevues: document.getElementById("r-dates_prevues").value,
+      contacts: document.getElementById("r-contacts").value,
+      statut: document.getElementById("r-statut").value,
+      dates_relances: document.getElementById("r-dates_relances").value,
+      observations: document.getElementById("r-observations").value
+    };
+    try{
+      await apiPost({action:"saveRelance", relance});
+      showToast("Relance enregistrée");
+      document.getElementById("modal-relance").classList.remove("open");
+      await loadAll();
+    }catch(err){ showToast("Erreur : " + err.message, true); e.currentTarget.disabled = false; }
+  });
+  document.getElementById("modal-relance").classList.add("open");
+}
 
 /* ============================================================
    INITIALISATION
