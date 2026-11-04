@@ -542,7 +542,7 @@ h2.section-title{
    CONFIGURATION - A COMPLETER APRES DEPLOIEMENT APPS SCRIPT
    ============================================================ */
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbzr-pyX-Quc7AkC_57ovli-UT2Dr6voeQPHXBFly28SgFuLc6vph9YJrTWNTPiNG38t/exec"
+  API_URL: "https://script.google.com/macros/s/AKfycbySVTc6h6gteAw091-LUYmGQV8ZT6mwrqKLLxEOyuoxga_TCUGLm4cwDve_ICeLtsq8/exec"
 };
 
 /* ============================================================
@@ -696,7 +696,7 @@ function renderDashboard(){
     if(!annee) return true;
     const nd = String(d.numero_devis||"");
     const dc = String(d.date_creation||"").slice(0,4);
-    return nd.includes("/"+annee) || dc === annee;
+    return nd.includes("/"+annee) || nd.startsWith(annee+"/") || dc === annee;
   });
   const dossiersSimples = dossiersActifs.filter(d=>(d.type_dossier||"visite_simple")!=="forfait");
   const dossiersForfaits = dossiersActifs.filter(d=>d.type_dossier==="forfait");
@@ -891,7 +891,9 @@ function renderDossiersTable(){
     if(state_anneeFiltre){
       const nd = String(d.numero_devis||"");
       const dc = String(d.date_creation||"").slice(0,4);
-      if(!nd.includes("/"+state_anneeFiltre) && dc!==state_anneeFiltre) return false;
+      // Supporte les deux formats : "01/2027" et "2027/01"
+      const anneeOk = nd.includes("/"+state_anneeFiltre) || nd.startsWith(state_anneeFiltre+"/") || dc===state_anneeFiltre;
+      if(!anneeOk) return false;
     }
     if(!search) return true;
     const blob = [d.client_nom, d.organisme, d.lieu_visite, d.numero_devis].join(" ").toLowerCase();
@@ -2223,8 +2225,11 @@ function majSeleteurAnnees(){
   const anneesFromDossiers = new Set(
     (state.dossiers||[]).map(d=>{
       const nd = String(d.numero_devis||"");
-      const m = nd.match(/\/(\d{4})$/);
-      if(m) return m[1];
+      // Format "AAAA/NN" ou "NN/AAAA"
+      const m1 = nd.match(/^(\d{4})\//);
+      if(m1) return m1[1];
+      const m2 = nd.match(/\/(\d{4})$/);
+      if(m2) return m2[1];
       return String(d.date_creation||"").slice(0,4);
     }).filter(a=>a && a.length===4)
   );
@@ -2272,7 +2277,7 @@ function renderRelancesTable(){
   const statut = document.getElementById("relances-filter-statut").value;
   const search = (document.getElementById("relances-search").value||"").toLowerCase();
   const liste = (state.relances||[]).filter(r=>{
-    if(annee && r.annee && r.annee!==annee) return false;
+    if(annee && r.annee && String(r.annee)!==String(annee)) return false;
     if(statut && r.statut!==statut) return false;
     if(search){
       const hay = [(r.nom||""),(r.prestations||""),(r.contacts||""),(r.observations||"")].join(" ").toLowerCase();
